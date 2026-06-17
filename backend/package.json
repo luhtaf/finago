@@ -1,0 +1,33 @@
+{
+  "name": "finago-backend",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "FINA go backend — pengajuan reimburse + purchase, approval, OneDrive sync",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "seed": "tsx src/shared/db/seed.ts",
+    "docx:sample": "tsx scripts/gen-sample-docx.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.700.0",
+    "@hono/node-server": "^1.13.7",
+    "@libsql/client": "^0.14.0",
+    "docx": "^9.0.3",
+    "drizzle-orm": "^0.36.4",
+    "hono": "^4.6.13",
+    "nanoid": "^5.0.9",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "drizzle-kit": "^0.28.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

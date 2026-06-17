@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#1e2a8e" />
+<title>FINA go — Pengajuan</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231e2a8e'%3E%3Crect width='24' height='24' rx='6'/%3E%3Cpath d='M7 17V7h7M7 12h6' stroke='%2314b8a6' stroke-width='2' stroke-linecap='round' fill='none'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Satoshi','ui-sans-serif','system-ui'],
+          serif: ['Newsreader','Georgia','serif'],
+          mono: ['JetBrains Mono','ui-monospace'],
+        },
+        colors: {
+          ink:   '#15183a',
+          brand: { 50:'#eef0fb',100:'#d6dcf7',200:'#bcc3f3',300:'#8e9ae8',400:'#5d6dda',500:'#1e2a8e',600:'#1a247a',700:'#141a4f',900:'#0d1130' },
+          accent:{ 400:'#2dd4bf',500:'#14b8a6',600:'#0d9488',700:'#0f766e' },
+          paper: '#f5f6f9',
+          line:  '#e6e8f0',
+        },
+        borderRadius: { card:'14px', fld:'10px', chip:'8px' },
+        boxShadow: {
+          'soft': '0 1px 2px rgba(21,24,58,.05)',
+          'card': '0 1px 2px rgba(21,24,58,.04), 0 12px 28px -16px rgba(21,24,58,.14)',
+          'paper':'0 1px 0 rgba(0,0,0,.04), 0 30px 70px -24px rgba(21,24,58,.30)',
+        },
+      },
+    },
+  };
+</script>
+<style>
+  :root { color-scheme: light dark; }
+  body { -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  [x-cloak]{ display:none !important; }
+  .num { font-feature-settings:'tnum' 1,'lnum' 1; font-variant-numeric: tabular-nums; }
+
+  .badge-dot { width:.45rem; height:.45rem; border-radius:9999px; display:inline-block; }
+  @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .animate-pulse-dot { animation: pulse-dot 1.8s ease-in-out infinite; }
+  @keyframes rise { from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)} }
+  .rise { animation: rise .38s cubic-bezier(.2,.7,.2,1) both; }
+
+  input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  input[type=number]{ -moz-appearance:textfield; }
+
+  /* form fields — flat, hairline, teal focus */
+  .lbl { display:block; font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:#8589a0; margin-bottom:6px; }
+  .dark .lbl { color:#7c8198; }
+  .fld, .fld-sm { width:100%; border:1px solid #e6e8f0; border-radius:10px; background:#fff; color:#15183a; font-weight:500; transition:border-color .15s, box-shadow .15s; }
+  .fld { padding:9px 12px; font-size:14px; }
+  .fld-sm { padding:7px 10px; font-size:13px; }
+  .dark .fld, .dark .fld-sm { background:#0e1226; border-color:rgba(255,255,255,.10); color:#e7e9f2; }
+  .fld:focus, .fld-sm:focus { outline:none; border-color:#14b8a6; box-shadow:0 0 0 3px rgba(20,184,166,.16); }
+  .fld-err { border-color:#f43f5e !important; box-shadow:0 0 0 3px rgba(244,63,94,.14) !important; }
+
+  /* paper FORMULIR — formal serif document */
+  .paper-doc { background:#fff; color:#1a1c2e; }
+  .formulir { font-family:'Newsreader',serif; }
+  .formulir table { border-collapse:collapse; width:100%; }
+  .formulir th, .formulir td { border:1px solid #d7dae8; padding:6px 9px; }
+  .formulir thead th { background:#15183a; color:#fff; font-weight:600; font-size:11px; letter-spacing:.03em; font-family:'Satoshi',sans-serif; text-transform:uppercase; }
+  .sheet { aspect-ratio:1 / 1.414; }
+  @media (max-width:1023px){ .sheet{ aspect-ratio:auto; } }
+
+  .canvas-bg { background-color:#eceef4; background-image:radial-gradient(circle at 1px 1px, rgba(21,24,58,.07) 1px, transparent 0); background-size:24px 24px; }
+  .dark .canvas-bg { background-color:#080b16; background-image:radial-gradient(circle at 1px 1px, rgba(93,109,218,.12) 1px, transparent 0); }
+
+  .row-drag { cursor:grab; }
+  .row-over { box-shadow: inset 0 2px 0 0 #14b8a6; }
+
+  /* subtle gradients — tipis, cuma di elemen hero (depth, bukan dekorasi) */
+  body { background:linear-gradient(180deg,#f6f7fa 0%,#eef0f6 100%); background-attachment:fixed; }
+  .dark body { background:linear-gradient(180deg,#080b16 0%,#05070f 100%); }
+  .total-bar { background:linear-gradient(160deg,#1d2150 0%,#111430 100%); }
+  .dark .total-bar { background:linear-gradient(160deg,#0d1126 0%,#070a16 100%); }
+  .btn-primary { background:linear-gradient(180deg,#27359d 0%,#19237a 100%); }
+  .btn-primary:hover { background:linear-gradient(180deg,#212d88 0%,#141d68 100%); }
+
+  @media print {
+    body * { visibility:hidden; }
+    #print-area, #print-area * { visibility:visible; }
+    #print-area { position:absolute; left:0; top:0; width:100%; box-shadow:none !important; aspect-ratio:auto !important; }
+    @page { margin:14mm; }
+  }
+</style>
+</head>
+<body class="font-sans antialiased bg-paper text-ink dark:bg-[#070a14] dark:text-slate-200">
+
+<!-- ============ TOP NAV ============ -->
+<nav class="sticky top-0 z-40 bg-paper/85 dark:bg-[#070a14]/85 backdrop-blur border-b border-line dark:border-white/[.07]">
+  <div class="max-w-[1480px] mx-auto px-5 h-14 flex items-center gap-3">
+    <a href="#" class="flex items-center gap-2.5 font-bold text-ink dark:text-white tracking-tight">
+      <span class="w-8 h-8 rounded-[9px] bg-brand-500 grid place-items-center"><span class="font-black text-white text-sm">F</span></span>
+      <span class="text-[15px]">FINA<span class="text-accent-500 font-medium"> go</span></span>
+    </a>
+    <span class="hidden sm:inline text-[13px] text-slate-400 dark:text-slate-500 font-medium border-l border-line dark:border-white/10 pl-3">Pengajuan baru</span>
+    <div class="ml-auto flex items-center gap-2.5">
+      <span class="hidden md:inline-flex items-center gap-1.5 text-[11px] font-semibold text-accent-700 dark:text-accent-400 bg-accent-500/[.08] px-2.5 py-1.5 rounded-chip">
+        <span class="badge-dot bg-accent-500 animate-pulse-dot"></span> Mockup · data dummy
+      </span>
+      <div class="hidden sm:flex items-center gap-2 pl-1 pr-3 py-1 rounded-full border border-line dark:border-white/10">
+        <span class="w-6 h-6 rounded-full bg-brand-500 grid place-items-center text-[10px] font-bold text-white">AR</span>
+        <span class="text-[13px] font-semibold">Adinda RN</span>
+      </div>
+      <button onclick="toggleDark()" class="p-2 rounded-fld text-slate-400 hover:text-ink hover:bg-line/60 dark:hover:bg-white/10 dark:hover:text-white transition" title="Ganti tema">
+        <i data-lucide="sun-moon" class="w-[18px] h-[18px]"></i>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- ============ APP ============ -->
+<main x-data="pengajuan()" x-init="init()" x-cloak class="max-w-[1480px] mx-auto px-5 py-7">
+
+  <div class="mb-6">
+    <div class="text-[11px] font-semibold uppercase tracking-[.14em] text-accent-600 dark:text-accent-400 mb-1.5">Reimburse &amp; Purchase</div>
+    <h1 class="text-[26px] leading-none font-black tracking-[-.02em] text-ink dark:text-white">Buat Pengajuan</h1>
+    <p class="text-[14px] text-slate-500 dark:text-slate-400 mt-2">Tulis rinciannya — total dihitung otomatis, FORMULIR ke-generate real-time.</p>
+  </div>
+
+  <!-- mobile tab switch -->
+  <div class="lg:hidden flex p-1 rounded-fld border border-line dark:border-white/10 text-[13px] font-semibold mb-5">
+    <button @click="view='form'"    :class="view==='form'    ? 'bg-ink text-white' : 'text-slate-500 dark:text-slate-400'" class="flex-1 px-4 py-2 rounded-chip transition flex items-center justify-center gap-1.5"><i data-lucide="pencil-line" class="w-4 h-4"></i> Form</button>
+    <button @click="view='preview'" :class="view==='preview' ? 'bg-ink text-white' : 'text-slate-500 dark:text-slate-400'" class="flex-1 px-4 py-2 rounded-chip transition flex items-center justify-center gap-1.5"><i data-lucide="eye" class="w-4 h-4"></i> Preview</button>
+  </div>
+
+  <div class="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,548px)] gap-6 items-start">
+
+  <!-- ---------- LEFT: FORM ---------- -->
+  <section class="rise space-y-4" :class="{ 'hidden lg:block': view==='preview' }">
+
+    <!-- kategori -->
+    <div class="inline-flex p-1 rounded-fld border border-line dark:border-white/10 text-[13px] font-semibold">
+      <button @click="kategori='Reimbursement'"  :class="kategori==='Reimbursement'  ? 'bg-ink text-white' : 'text-slate-500 dark:text-slate-400 hover:text-ink dark:hover:text-white'" class="px-4 py-1.5 rounded-chip transition">Reimbursement</button>
+      <button @click="kategori='Pengajuan Baru'" :class="kategori==='Pengajuan Baru' ? 'bg-ink text-white' : 'text-slate-500 dark:text-slate-400 hover:text-ink dark:hover:text-white'" class="px-4 py-1.5 rounded-chip transition">Pengajuan Baru</button>
+    </div>
+
+    <!-- STEP 1 -->
+    <div class="bg-white dark:bg-[#0c1022] rounded-card shadow-card border border-line dark:border-white/[.07] p-5">
+      <div class="flex items-center gap-2.5 mb-5">
+        <span class="w-[22px] h-[22px] rounded-md bg-brand-500 text-white text-[11px] font-bold grid place-items-center">1</span>
+        <h2 class="text-[14px] font-bold text-ink dark:text-white tracking-tight">Apa yang diajukan</h2>
+      </div>
+      <label class="block mb-4">
+        <span class="lbl">Nama pengajuan</span>
+        <input x-model="nama" type="text" placeholder="cth. Operasional Project LiDAR Batch #3" class="fld" :class="{'fld-err': submitted && !nama.trim()}" />
+      </label>
+      <div class="grid sm:grid-cols-2 gap-4">
+        <label class="block">
+          <span class="lbl">Kode unik / proyek</span>
+          <select x-model="kode" class="fld">
+            <template x-for="k in proyek" :key="k.kode"><option :value="k.kode" x-text="k.kode + ' — ' + k.desc"></option></template>
+          </select>
+        </label>
+        <div class="block">
+          <span class="lbl">Prioritas</span>
+          <div class="flex gap-2">
+            <button type="button" @click="status='Urgent'"     :class="status==='Urgent'     ? 'bg-rose-500 text-white border-rose-500' : 'border-line dark:border-white/15 text-slate-500 hover:border-slate-300'" class="flex-1 px-3 py-2 rounded-fld border text-[13px] font-semibold transition">Urgent</button>
+            <button type="button" @click="status='Not Urgent'" :class="status==='Not Urgent' ? 'bg-ink text-white border-ink' : 'border-line dark:border-white/15 text-slate-500 hover:border-slate-300'" class="flex-1 px-3 py-2 rounded-fld border text-[13px] font-semibold transition">Santai</button>
+          </div>
+        </div>
+      </div>
+      <div class="mt-3.5" x-data="{edit:false}">
+        <template x-if="!edit">
+          <button @click="edit=true" class="inline-flex items-center gap-1.5 text-[12px] text-slate-400 hover:text-ink dark:hover:text-white transition">
+            <i data-lucide="calendar-clock" class="w-3.5 h-3.5"></i>
+            Tanggal: <span class="font-semibold text-slate-600 dark:text-slate-300" x-text="tglLong"></span>
+            <span class="text-accent-600 dark:text-accent-400 font-medium">· otomatis, klik untuk ubah</span>
+          </button>
+        </template>
+        <template x-if="edit"><input type="date" x-model="tanggal" @blur="edit=false" class="fld-sm max-w-[180px]" /></template>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="bg-white dark:bg-[#0c1022] rounded-card shadow-card border border-line dark:border-white/[.07] overflow-hidden">
+      <div class="px-5 pt-5 pb-3.5 flex items-center gap-2.5">
+        <span class="w-[22px] h-[22px] rounded-md bg-brand-500 text-white text-[11px] font-bold grid place-items-center">2</span>
+        <h2 class="text-[14px] font-bold text-ink dark:text-white tracking-tight">Rincian anggaran</h2>
+        <span class="ml-auto text-[12px] text-slate-400 num" x-text="items.length + ' item'"></span>
+      </div>
+
+      <div class="hidden md:grid grid-cols-[18px_1.5fr_.6fr_.8fr_1fr_1fr_auto] gap-2 px-5 pb-2 text-[10px] font-semibold uppercase tracking-[.07em] text-slate-400">
+        <span></span><span>Item</span><span>Qty</span><span>Satuan</span><span>Harga satuan</span><span class="text-right">Subtotal</span><span></span>
+      </div>
+
+      <div class="px-5 pb-2 space-y-2">
+        <template x-for="(it, i) in items" :key="it.id">
+          <div class="grid grid-cols-3 md:grid-cols-[18px_1.5fr_.6fr_.8fr_1fr_1fr_auto] gap-2 items-center rise rounded-fld pb-3 mb-1 border-b border-dashed border-line dark:border-white/[.06] md:border-0 md:pb-0 md:mb-0"
+               :class="{'opacity-40': dragIdx===i, 'row-over': overIdx===i && dragIdx!==null}"
+               @dragover.prevent="overIdx=i" @drop="drop(i)" @dragend="dragIdx=null;overIdx=null">
+            <span class="row-drag text-slate-300 hover:text-slate-500 hidden md:grid place-items-center" draggable="true" @dragstart="dragIdx=i" title="Geser untuk urutkan"><i data-lucide="grip-vertical" class="w-4 h-4"></i></span>
+            <input x-model="it.item" type="text" placeholder="cth. BBM Pertalite" class="fld-sm col-span-3 md:col-span-1" :class="{'fld-err': submitted && !it.item.trim()}" />
+            <input x-model.number="it.qty" type="number" min="0" placeholder="Qty" class="fld-sm num" :class="{'fld-err': submitted && !(it.qty>0)}" />
+            <input x-model="it.sat" type="text" placeholder="Satuan" class="fld-sm" />
+            <input :value="fmtNum(it.harga)" @input="it.harga=parseNum($event.target.value)" type="text" inputmode="numeric" placeholder="Harga" class="fld-sm num" :class="{'fld-err': submitted && !(it.harga>0)}" />
+            <span class="text-right font-bold num text-[13px] pr-1 text-ink dark:text-accent-400 col-span-2 md:col-span-1" x-text="rp(it.qty*it.harga)"></span>
+            <div class="flex items-center justify-end gap-0.5">
+              <button @click="dupItem(i)" class="p-1.5 rounded-md text-slate-300 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10" title="Duplikat baris"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
+              <button @click="removeItem(i)" :disabled="items.length===1" class="p-1.5 rounded-md text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 disabled:opacity-30 disabled:hover:text-slate-300 disabled:hover:bg-transparent" title="Hapus baris"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <div class="px-5 pb-4">
+        <button @click="addItem()" class="w-full py-2.5 rounded-fld border border-dashed border-brand-200 dark:border-brand-400/30 text-brand-500 dark:text-accent-400 text-[13px] font-semibold hover:bg-brand-50 dark:hover:bg-brand-500/10 transition flex items-center justify-center gap-2">
+          <i data-lucide="plus" class="w-4 h-4"></i> Tambah baris
+        </button>
+      </div>
+
+      <!-- total bar — flat ink + 1 teal accent line -->
+      <div class="total-bar border-t-2 border-accent-500 px-5 py-4 flex items-center justify-between">
+        <span class="text-white/55 text-[11px] font-semibold uppercase tracking-[.1em]">Total pengajuan</span>
+        <span class="text-white text-[26px] font-black num tracking-tight" x-text="rp(displayTotal)"></span>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="bg-white dark:bg-[#0c1022] rounded-card shadow-card border border-line dark:border-white/[.07] p-5 space-y-4">
+      <div class="flex items-center gap-2.5">
+        <span class="w-[22px] h-[22px] rounded-md bg-accent-500 text-white text-[11px] font-bold grid place-items-center">3</span>
+        <h2 class="text-[14px] font-bold text-ink dark:text-white tracking-tight">Pencairan &amp; bukti</h2>
+      </div>
+      <label class="block">
+        <span class="lbl">Dana dicairkan ke rekening</span>
+        <select x-model="rekening" class="fld"><template x-for="r in rekenings" :key="r"><option :value="r" x-text="r"></option></template></select>
+        <span class="text-[11px] text-accent-600 dark:text-accent-400 font-semibold mt-1.5 inline-flex items-center gap-1"><i data-lucide="shield-check" class="w-3 h-3"></i> rekening terverifikasi Finance</span>
+      </label>
+      <label class="flex items-center gap-3 p-3 rounded-fld border border-dashed border-line dark:border-white/15 cursor-pointer hover:border-accent-500 transition">
+        <span class="w-10 h-10 rounded-fld bg-accent-500/[.09] grid place-items-center text-accent-600 dark:text-accent-400"><i data-lucide="paperclip" class="w-5 h-5"></i></span>
+        <span class="flex-1">
+          <span class="block text-[13px] font-semibold text-ink dark:text-white">Lampiran nota / kuitansi</span>
+          <span class="block text-[12px] text-slate-400" x-text="kategori==='Reimbursement' ? 'Wajib untuk reimbursement' : 'Opsional (quotation kalau ada)'"></span>
+        </span>
+        <span class="text-[12px] font-semibold text-slate-400">Pilih file</span>
+        <input type="file" class="hidden" />
+      </label>
+      <div class="flex flex-col sm:flex-row gap-2.5 pt-1">
+        <button @click="downloadDocx()" class="btn-primary flex-1 py-3 rounded-fld text-white font-bold text-[13px] flex items-center justify-center gap-2 transition">
+          <i data-lucide="file-down" class="w-4 h-4"></i> Generate FORMULIR (.docx)
+        </button>
+        <button onclick="window.print()" class="py-3 px-4 rounded-fld border border-line dark:border-white/15 hover:bg-line/50 dark:hover:bg-white/5 text-slate-600 dark:text-slate-200 font-bold text-[13px] flex items-center justify-center gap-2 transition">
+          <i data-lucide="printer" class="w-4 h-4"></i> Print
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- RIGHT: PREVIEW ---------- -->
+  <section class="lg:sticky lg:top-[76px]" :class="{ 'hidden lg:block': view==='form' }">
+    <div class="hidden lg:flex items-center justify-between mb-3">
+      <span class="text-[11px] font-semibold uppercase tracking-[.07em] text-slate-400 flex items-center gap-2"><i data-lucide="eye" class="w-3.5 h-3.5"></i> Preview dokumen</span>
+      <span class="text-[11px] font-mono px-2 py-1 rounded-md border border-line dark:border-white/10 text-slate-500 dark:text-accent-400 font-semibold" x-text="nbr"></span>
+    </div>
+
+    <div class="canvas-bg rounded-card p-4 sm:p-7">
+      <div id="print-area" class="paper-doc sheet rounded-[3px] shadow-paper mx-auto max-w-[490px] flex flex-col">
+        <div class="p-7 sm:p-9 formulir flex-1">
+          <div class="flex items-start justify-between border-b-2 border-ink pb-3 mb-5">
+            <div>
+              <div class="font-sans font-black text-ink text-[18px] leading-none tracking-tight">FINA<span class="text-accent-600 font-medium"> go</span></div>
+              <div class="text-[10px] text-slate-400 font-sans mt-1.5 tracking-wide">PT. KARTA BHUMI NUSANTARA</div>
+            </div>
+            <div class="text-right">
+              <div class="text-[9px] uppercase tracking-[.12em] text-slate-400 font-sans">No. Dokumen</div>
+              <div class="font-mono text-[11px] font-semibold text-ink mt-0.5" x-text="noDokumen"></div>
+            </div>
+          </div>
+
+          <h3 class="text-center font-semibold tracking-[.18em] text-[13px] uppercase mb-1 font-sans text-ink">Formulir <span x-text="kategori"></span></h3>
+          <div class="text-center text-[13px] mb-5" :class="nama.trim() ? 'text-slate-500 italic' : 'text-slate-300 italic'" x-text="nama.trim() || 'judul pengajuan…'"></div>
+
+          <table class="text-[12px] mb-3">
+            <thead><tr><th class="w-7">No</th><th class="text-left">Rincian Anggaran</th><th class="w-12">Kuantitas</th><th class="w-10">Sat.</th><th class="w-24 text-right">Jumlah</th></tr></thead>
+            <tbody>
+              <template x-for="(it,i) in items" :key="it.id">
+                <tr>
+                  <td class="text-center" x-text="i+1"></td>
+                  <td :class="{'text-slate-300 italic': !it.item.trim()}" x-text="it.item.trim() || 'item…'"></td>
+                  <td class="text-center num" x-text="it.qty || 0"></td>
+                  <td class="text-center" x-text="it.sat || '-'"></td>
+                  <td class="text-right num" x-text="fmt(it.qty*it.harga)"></td>
+                </tr>
+              </template>
+              <tr class="font-bold">
+                <td colspan="4" class="text-right uppercase tracking-wide text-[11px] font-sans" style="background:#14b8a610">Total</td>
+                <td class="text-right num" style="background:#14b8a610" x-text="'Rp'+fmt(displayTotal)"></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="text-[12px] mb-9"><span class="text-slate-500">*Dikirim ke Rekening:</span> <span class="font-semibold" x-text="rekening"></span></div>
+
+          <div class="grid grid-cols-2 gap-4 text-center text-[12px] mt-auto">
+            <div><div class="text-slate-500 mb-11">Prepared &amp; Requested by</div><div class="border-t border-slate-400 pt-1.5 font-semibold">Adinda RN</div></div>
+            <div><div class="text-slate-500 mb-11">Approved by</div><div class="border-t border-slate-400 pt-1.5 font-semibold">Wahyu Banitara</div></div>
+          </div>
+        </div>
+        <div class="border-t border-slate-200 px-9 py-2.5 flex items-center justify-between text-[9px] text-slate-400 font-sans tracking-wide">
+          <span x-text="tglDisplay"></span><span>HALAMAN 1 DARI 1 · FINA go</span>
+        </div>
+      </div>
+    </div>
+    <p class="text-center text-[11px] text-slate-400 mt-3">Preview ikut struktur FORMULIR docx asli. Tombol <span class="font-semibold">.docx</span> nanti generate file beneran di backend.</p>
+  </section>
+  </div>
+</main>
+
+<div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 hidden">
+  <div id="toast-box" class="text-white text-[13px] font-semibold px-4 py-2.5 rounded-fld shadow-paper flex items-center gap-2 bg-ink">
+    <i id="toast-icon" data-lucide="check-circle-2" class="w-4 h-4 text-accent-400"></i>
+    <span id="toast-msg"></span>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+<script>
+  function toggleDark(){ document.documentElement.classList.toggle('dark'); try { localStorage.fg_dark = document.documentElement.classList.contains('dark')?'1':'0'; } catch(e){} }
+  if ((()=>{ try { return localStorage.fg_dark==='1'; } catch(e){ return false; } })()) document.documentElement.classList.add('dark');
+
+  function toast(msg, ok=true){
+    const t=document.getElementById('toast');
+    document.getElementById('toast-msg').textContent=msg;
+    document.getElementById('toast-box').className='text-white text-[13px] font-semibold px-4 py-2.5 rounded-fld shadow-paper flex items-center gap-2 '+(ok?'bg-ink':'bg-rose-500');
+    document.getElementById('toast-icon').setAttribute('data-lucide', ok?'check-circle-2':'alert-triangle');
+    t.classList.remove('hidden'); lucide.createIcons();
+    clearTimeout(window._tt); window._tt=setTimeout(()=>t.classList.add('hidden'),2800);
+  }
+
+  let _seq=4;
+  function pengajuan(){
+    return {
+      view:'form', kategori:'Reimbursement', nama:'BBM dan Nitrogen', kode:'PRO001',
+      tanggal:'2026-06-13', status:'Urgent',
+      rekening:'1370020855504 Bank Mandiri a.n Adinda Rizqi Novia',
+      submitted:false, dragIdx:null, overIdx:null, displayTotal:0,
+      proyek:[
+        { kode:'PRO001', desc:'APP Group — QC Canal Limbah OKI' },
+        { kode:'PRO002', desc:'Pemda Raja Ampat — PPBW' },
+        { kode:'PRO003', desc:'Waskita — UAV LiDAR Takengon' },
+        { kode:'BIM001', desc:'BWI — Modeling Grand Makarti Jaksel' },
+        { kode:'ADM',    desc:'Administrasi / Head Office' },
+        { kode:'HR',     desc:'Human Resources' },
+      ],
+      rekenings:[
+        '1370020855504 Bank Mandiri a.n Adinda Rizqi Novia',
+        '1380025206736 Bank Mandiri a.n Adin Abhirama',
+        '9000031509368 Bank Mandiri a.n Wahyu Banitara',
+        '677101043232534 Bank BRI a.n Baqoh Wiharjo',
+      ],
+      items:[ { id:1, item:'BBM Pertalite', qty:20, sat:'Liter', harga:10000 }, { id:2, item:'Nitrogen', qty:4, sat:'Ban', harga:4000 } ],
+      _id:3,
+      init(){ this.displayTotal=this.total; this.$watch('total',(v,o)=>this.tween(o||0,v)); this.$nextTick(()=>lucide.createIcons()); },
+      addItem(){ this.items.push({ id:this._id++, item:'', qty:1, sat:'', harga:0 }); this.$nextTick(()=>lucide.createIcons()); },
+      dupItem(i){ this.items.splice(i+1,0,{ ...this.items[i], id:this._id++ }); this.$nextTick(()=>lucide.createIcons()); },
+      removeItem(i){ if(this.items.length>1) this.items.splice(i,1); },
+      drop(i){ if(this.dragIdx===null||this.dragIdx===i) return; const m=this.items.splice(this.dragIdx,1)[0]; this.items.splice(i,0,m); this.dragIdx=null; this.overIdx=null; },
+      get total(){ return this.items.reduce((s,it)=>s+(Number(it.qty)||0)*(Number(it.harga)||0),0); },
+      get nbr(){ return 'BR'+String(_seq).padStart(3,'0'); },
+      get noDokumen(){ return this.nbr+'/'+(this.kode||'—')+'/'+(this.kategori==='Reimbursement'?'Reimbursement':'Pengajuan-Baru')+'-'+this.status.replace(' ',''); },
+      get tglDisplay(){ if(!this.tanggal) return ''; const [y,m,dd]=this.tanggal.split('-'); return dd+'/'+m+'/'+y; },
+      get tglLong(){ if(!this.tanggal) return '—'; try { return new Intl.DateTimeFormat('id-ID',{day:'numeric',month:'short',year:'numeric'}).format(new Date(this.tanggal+'T00:00:00')); } catch(e){ return this.tanggal; } },
+      tween(from,to){ const dur=380,t0=performance.now(),ease=p=>1-Math.pow(1-p,3); const step=now=>{ const p=Math.min(1,(now-t0)/dur); this.displayTotal=Math.round(from+(to-from)*ease(p)); if(p<1) requestAnimationFrame(step); }; requestAnimationFrame(step); },
+      rp(n){ return 'Rp'+this.fmt(n); },
+      fmt(n){ return new Intl.NumberFormat('id-ID').format(Math.round(Number(n)||0)); },
+      fmtNum(n){ return n ? new Intl.NumberFormat('id-ID').format(n) : ''; },
+      parseNum(s){ return Number(String(s).replace(/[^\d]/g,''))||0; },
+      downloadDocx(){
+        this.submitted=true;
+        if(!this.nama.trim()){ toast('Nama pengajuan masih kosong',false); return; }
+        if(this.items.some(it=>!it.item.trim()||!(it.qty>0)||!(it.harga>0))){ toast('Ada baris rincian yang belum lengkap',false); return; }
+        toast(this.noDokumen+' siap — .docx di-generate di backend');
+      },
+    };
+  }
+  document.addEventListener('alpine:initialized', ()=> lucide.createIcons());
+  window.addEventListener('load', ()=> lucide.createIcons());
+</script>
+</body>
+</html>

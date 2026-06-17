@@ -54,6 +54,43 @@ colors: {
 
 Logo: `brand/finago-logo.png` — dipakai di splash + login + top nav (mini).
 
+## Data model nyata (dari file contoh — sudah di-mock, BOLEH dibaca)
+
+File contoh ada di parent dir `../` (bukan di repo): `BR001_*.docx` + `Salinan dari Pengajuan*.xlsx`. Sudah di-mock Fathul (row 1–2 + sheet Detail diubah), aman dibaca. Cara baca: unzip XML (lihat git log / minta Claude extract), jangan butuh tool eksternal.
+
+**Sumber kebenaran data hari ini (manual, mau digantikan FINA go):**
+
+1. **xlsx sheet "Form responses 1"** = master log pengajuan. 1 row = 1 pengajuan. Kolom penting:
+   `Tanggal | Kode Unik (proyek) | Status (Urgent/Not Urgent) | Nama Pengaju | Kategori (Reimbursement | Pengajuan Baru) | Nama Pengajuan | Total Pengajuan | Upload Nota | Nomor Rekening | NBR (BR001…) | Approval | Document Studio file link`
+   ⚠️ Masalah lama: rincian item di-mash jadi free-text di `Nama Pengajuan` (`"1. Konsumsi Rp 1jt\n2. BBM Rp 1jt…"`) → susah dihitung & diaudit.
+2. **xlsx sheet "Detail Item"** = breakdown per item: `NBR | Item | Jumlah | Satuan | Harga`. **Ini struktur target form** (line-item, bukan free-text).
+3. **xlsx sheet "REKAP COP"** = master kode proyek: `PRO001` = APP Group QC Canal OKI, `BIM001` = Grand Makarti Jaksel, dll. Kode Unik di pengajuan refer ke sini.
+4. **`BR001_*.docx`** = **template OUTPUT**. `FORMULIR Reimbursement`, tabel `No | Rincian Anggaran | Kuantitas | Sat. | Jumlah | Remark`, `TOTAL Rp…`, `Dikirim ke Rekening`, `Prepared & Requested by` / `Approved by`.
+
+**Requirement inti (Fathul, 2026-06-13):** ganti alur lama → **satu form dengan line-item table (mirip sheet "Detail Item")** → **auto-sum Total** → **generate docx FORMULIR** sebagai output. NBR (nomor dokumen BR0xx) auto-increment. Mockup dulu sebelum wiring backend.
+
+## Konvensi struktur kode (feature-based) + aturan WARNING
+
+Arsitektur: **vertical slice / feature-based**, bukan layer-based (jangan misah global `controllers/` `models/`).
+
+- `backend/features/<fitur>/` — semua file fitur ngumpul (routes, model, service, docx, dll). Subfitur = subfolder di dalamnya.
+- Tiap folder fitur punya **`CLAUDE.md` sendiri** — nyeritain fitur itu lengkap (tabel, job/cron, endpoint) biar context AI ringan walau codebase gede.
+- FE sama polanya: `features/<fitur>/` pas keluar dari fase demo single-file (vanilla no-build tetep bisa via ES module `<script type=module>`).
+- **Jangan paksa ceremony**: fitur kecil cukup 1 file. Split controller/model/service PAS udah gede, bukan di depan.
+- `backend/shared/` — db client (Drizzle), graph client, r2, auth.
+- Domain baru yang beneran beda → **repo lain** (polyrepo), bukan dijejelin ke sini.
+
+**Hierarki guardrail (penting):** CLAUDE.md utama ini = **guardrail GLOBAL**, berlaku ke semua fitur dan **gak bisa di-override / di-ignore** oleh CLAUDE.md fitur. CLAUDE.md per fitur cuma boleh **nambah aturan yang lebih ketat** buat fitur itu — gak boleh ngelonggarin yang global. Kalau konflik → **global menang**.
+
+**ATURAN WARNING (wajib, biar gak ke-miss):** semua warning lintas-fitur WAJIB ditulis di **CLAUDE.md UTAMA ini** (boleh double dengan CLAUDE.md fitur). Yang wajib naik ke sini: kupling antar-fitur, job/cron, dan flow nyambung. Tulis nunjuk **benda verifiable** (nama tabel / event / cron), bukan deskripsi implementasi (biar gak drift).
+
+### ⚠️ Warning lintas-fitur aktif
+Direncanakan di `PLAN-BE.md` (jadi wajib dipatuhi pas implementasi):
+- `pengajuan` ⇄ `sync-onedrive`: ubah skema tabel `pengajuan`/`pengajuan_item` → cek mapping kolom di consumer sync + Workbook API.
+- `sync-onedrive`: ada **cron** baca tabel `outbox_events` → Graph API. Jangan ubah `type`/`payload` event tanpa update consumer. Idempotent pakai `nbr`.
+- `pengajuan` → `monitored-items`: `POST /pengajuan/:id/submit` men-trigger anomaly check.
+- `pengajuan.total` di-hitung & di-store di service (sum `pengajuan_item.subtotal`) — jangan percaya angka dari FE.
+
 ## Yang belum jelas — tanya user
 
 Saat user request demo / planning, klarifikasi dulu:
@@ -67,7 +104,7 @@ Saat user request demo / planning, klarifikasi dulu:
 
 ## Jangan dilakukan
 
-- ❌ Jangan baca file `BR001_*.docx` atau `Salinan dari Pengajuan*.xlsx` tanpa user explicit minta. Itu data asli karyawan, sensitive.
+- ⚠️ File `BR001_*.docx` + `Salinan dari Pengajuan*.xlsx` (di `../`) sekarang **sudah di-mock & boleh dibaca** (lihat section "Data model nyata"). Tetap jangan commit file-nya ke repo — sensitive-format, simpan di luar tracking.
 - ❌ Jangan campur konteks dengan `../new-hydro-canal/`. Kalau user nanya tentang HydroCanal, ingatkan untuk pindah sesi ke folder itu.
 - ❌ Jangan langsung scaffold React. Stack target adalah vanilla + Alpine.
 

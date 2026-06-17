@@ -1,0 +1,37 @@
+import { auth } from './auth.js';
+import { API_BASE } from './config.js';
+
+export { API_BASE };
+
+function authHeaders() {
+  const t = auth.token();
+  return t ? { Authorization: 'Bearer ' + t } : {};
+}
+
+async function req(method, path, body) {
+  const res = await fetch(API_BASE + path, {
+    method,
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : null;
+  if (!res.ok) throw new Error(data?.message || data?.error || `HTTP ${res.status}`);
+  return data;
+}
+
+export const api = {
+  get: (p) => req('GET', p),
+  post: (p, b) => req('POST', p, b),
+  patch: (p, b) => req('PATCH', p, b),
+  // download file (docx) → trigger browser save
+  async download(path, filename) {
+    const res = await fetch(API_BASE + path, { headers: authHeaders() });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+    a.remove(); URL.revokeObjectURL(url);
+  },
+};

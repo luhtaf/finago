@@ -6,7 +6,9 @@
 
 ## Status
 
-🚧 **Phase 0 — Planning.** Belum ada kode produksi, belum ada demo.
+🚧 **Phase 2 — Fitur lengkap.** **FE asli (`app/`)** + **backend (`backend/`)** nyambung end-to-end. Stack: vanilla+Alpine+Tailwind FE (mobile-friendly), Hono+Drizzle+libSQL BE.
+
+Jalan: **auth sendiri (JWT email+password)** → main menu → buat pengajuan (+ preview FORMULIR popup) → submit (anomaly check) → approval (verify/approve/reject by-amount rule) → **download .docx nyata** (lib `docx`). Plus kelola rekening, monitored-items (anti pengajuan ganda), master proyek. Storage R2 = FS-backed (dev). OneDrive/Graph = real-code, aktif kalau env Azure di-set. Demo mockup awal masih di `demo/`.
 
 ## Apa yang FINA go selesaikan
 

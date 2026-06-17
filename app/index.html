@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#1e2a8e" />
+<title>FINA go</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231e2a8e'%3E%3Crect width='24' height='24' rx='6'/%3E%3Cpath d='M7 17V7h7M7 12h6' stroke='%2314b8a6' stroke-width='2' stroke-linecap='round' fill='none'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin /><link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: { extend: {
+      fontFamily: { sans: ['Satoshi','ui-sans-serif','system-ui'], serif: ['Newsreader','Georgia','serif'], mono: ['JetBrains Mono','ui-monospace'] },
+      colors: {
+        ink: '#15183a',
+        brand: { 50:'#eef0fb',100:'#d6dcf7',200:'#bcc3f3',300:'#8e9ae8',400:'#5d6dda',500:'#1e2a8e',600:'#1a247a',700:'#141a4f',900:'#0d1130' },
+        accent: { 400:'#2dd4bf',500:'#14b8a6',600:'#0d9488',700:'#0f766e' },
+        paper: '#f5f6f9', line: '#e6e8f0',
+      },
+      borderRadius: { card:'14px', fld:'10px', chip:'8px' },
+      boxShadow: { soft:'0 1px 2px rgba(21,24,58,.05)', card:'0 1px 2px rgba(21,24,58,.04), 0 12px 28px -16px rgba(21,24,58,.14)', paper:'0 1px 0 rgba(0,0,0,.04), 0 30px 70px -24px rgba(21,24,58,.30)' },
+    } },
+  };
+</script>
+<style>
+  :root { color-scheme: light dark; }
+  body { -webkit-font-smoothing:antialiased; background:linear-gradient(180deg,#f6f7fa,#eef0f6); background-attachment:fixed; }
+  .dark body { background:linear-gradient(180deg,#080b16,#05070f); }
+  [x-cloak]{ display:none !important; }
+  .num { font-feature-settings:'tnum' 1; font-variant-numeric:tabular-nums; }
+  @keyframes rise { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+  .rise { animation:rise .35s cubic-bezier(.2,.7,.2,1) both; }
+  input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  input[type=number]{-moz-appearance:textfield}
+  .lbl { display:block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8589a0;margin-bottom:6px }
+  .dark .lbl{ color:#7c8198 }
+  .fld,.fld-sm{ width:100%;border:1px solid #e6e8f0;border-radius:10px;background:#fff;color:#15183a;font-weight:500;transition:border-color .15s,box-shadow .15s }
+  .fld{ padding:9px 12px;font-size:14px } .fld-sm{ padding:7px 10px;font-size:13px }
+  .dark .fld,.dark .fld-sm{ background:#0e1226;border-color:rgba(255,255,255,.10);color:#e7e9f2 }
+  .fld:focus,.fld-sm:focus{ outline:none;border-color:#14b8a6;box-shadow:0 0 0 3px rgba(20,184,166,.16) }
+  .btn-primary{ background:linear-gradient(180deg,#27359d,#19237a);color:#fff }
+  .btn-primary:hover{ background:linear-gradient(180deg,#212d88,#141d68) }
+  .total-bar{ background:linear-gradient(160deg,#1d2150,#111430) }
+  .dark .total-bar{ background:linear-gradient(160deg,#0d1126,#070a16) }
+  .card{ background:#fff;border:1px solid #e6e8f0;border-radius:14px;box-shadow:0 1px 2px rgba(21,24,58,.04),0 12px 28px -16px rgba(21,24,58,.14) }
+  .dark .card{ background:#0c1022;border-color:rgba(255,255,255,.07) }
+  /* FORMULIR paper preview */
+  .paper-doc{ background:#fff;color:#1a1c2e }
+  .formulir{ font-family:'Newsreader',serif }
+  .formulir table{ border-collapse:collapse;width:100% }
+  .formulir th,.formulir td{ border:1px solid #d7dae8;padding:5px 8px }
+  .formulir thead th{ background:#15183a;color:#fff;font-weight:600;font-size:10px;letter-spacing:.03em;font-family:'Satoshi',sans-serif;text-transform:uppercase }
+</style>
+</head>
+<body class="font-sans text-ink dark:text-slate-200" x-data="{}" x-init="$store.router.sync()" x-cloak>
+
+<!-- NAV -->
+<nav class="sticky top-0 z-40 bg-paper/85 dark:bg-[#070a14]/85 backdrop-blur border-b border-line dark:border-white/[.07]">
+  <div class="max-w-[1180px] mx-auto px-5 h-14 flex items-center gap-3">
+    <a href="#/pengajuan" class="flex items-center gap-2.5 font-bold text-ink dark:text-white tracking-tight">
+      <span class="w-8 h-8 rounded-[9px] bg-brand-500 grid place-items-center"><span class="font-black text-white text-sm">F</span></span>
+      <span class="text-[15px]">FINA<span class="text-accent-500 font-medium"> go</span></span>
+    </a>
+    <template x-if="$store.session.authed">
+      <div class="flex items-center gap-1 ml-2 text-[13px] font-semibold">
+        <a href="#/pengajuan" :class="['list','detail','form'].includes($store.router.view) ? 'text-brand-500 dark:text-white' : 'text-slate-400'" class="px-2.5 py-1.5 rounded-chip hover:bg-line/60 dark:hover:bg-white/5">Pengajuan</a>
+        <template x-if="$store.session.has('verifikator') || $store.session.has('approver')">
+          <a href="#/approvals" :class="$store.router.view==='approvals' ? 'text-brand-500 dark:text-white' : 'text-slate-400'" class="px-2.5 py-1.5 rounded-chip hover:bg-line/60 dark:hover:bg-white/5">Approval</a>
+        </template>
+      </div>
+    </template>
+    <div class="ml-auto flex items-center gap-2.5">
+      <template x-if="$store.session.authed">
+        <div class="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full border border-line dark:border-white/10">
+          <span class="w-6 h-6 rounded-full bg-brand-500 grid place-items-center text-[10px] font-bold text-white" x-text="$store.session.user.nama.split(' ').map(w=>w[0]).join('').slice(0,2)"></span>
+          <span class="text-[13px] font-semibold" x-text="$store.session.user.nama"></span>
+          <span class="text-[10px] uppercase tracking-wide text-accent-600 dark:text-accent-400 font-bold" x-text="$store.session.user.roles[0]"></span>
+        </div>
+      </template>
+      <template x-if="$store.session.authed">
+        <button @click="$store.session.logout()" class="p-2 rounded-fld text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-white/10" title="Keluar"><i data-lucide="log-out" class="w-[18px] h-[18px]"></i></button>
+      </template>
+      <button onclick="toggleDark()" class="p-2 rounded-fld text-slate-400 hover:text-ink hover:bg-line/60 dark:hover:bg-white/10 dark:hover:text-white"><i data-lucide="sun-moon" class="w-[18px] h-[18px]"></i></button>
+    </div>
+  </div>
+</nav>
+
+<main class="max-w-[1180px] mx-auto px-5 py-7">
+
+  <!-- ============ LOGIN ============ -->
+  <template x-if="$store.router.view==='login'">
+    <section x-data="loginView()" class="rise max-w-[400px] mx-auto mt-12">
+      <div class="text-center mb-7">
+        <div class="w-12 h-12 rounded-[12px] bg-brand-500 grid place-items-center mx-auto mb-4"><span class="font-black text-white text-xl">F</span></div>
+        <h1 class="text-[22px] font-black tracking-tight text-ink dark:text-white">Masuk ke FINA go</h1>
+        <p class="text-[13px] text-slate-500 mt-1">PT. Karta Bhumi Nusantara</p>
+      </div>
+      <form @submit.prevent="submit()" class="card p-5 space-y-4">
+        <label class="block"><span class="lbl">Email</span><input x-model="email" type="email" autocomplete="username" class="fld" placeholder="nama@kartabhumi.id" /></label>
+        <label class="block"><span class="lbl">Password</span><input x-model="password" type="password" autocomplete="current-password" class="fld" placeholder="••••••••" /></label>
+        <template x-if="err"><div class="text-[12px] text-rose-600 dark:text-rose-400 font-medium flex items-center gap-1.5"><i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> <span x-text="err"></span></div></template>
+        <button type="submit" :disabled="busy" class="btn-primary w-full py-3 rounded-fld text-[13px] font-bold disabled:opacity-60"><span x-text="busy?'Masuk…':'Masuk'"></span></button>
+      </form>
+      <p class="text-center text-[11px] text-slate-400 mt-4">Demo: <span class="font-mono text-slate-500 dark:text-slate-400">bagus@kartabhumi.id</span> · <span class="font-mono text-slate-500 dark:text-slate-400">fina123</span></p>
+    </section>
+  </template>
+
+  <!-- ============ HOME / MENU ============ -->
+  <template x-if="$store.router.view==='home'">
+    <section class="rise">
+      <div class="mb-6">
+        <div class="text-[11px] font-semibold uppercase tracking-[.14em] text-accent-600 dark:text-accent-400 mb-1.5">FINA go</div>
+        <h1 class="text-[24px] font-black tracking-tight text-ink dark:text-white" x-text="'Hai, '+($store.session.user?.nama?.split(' ')[0]||'')+' 👋'"></h1>
+        <p class="text-[13px] text-slate-500 mt-1">Mau ngapain hari ini?</p>
+      </div>
+      <div class="grid sm:grid-cols-2 gap-3 max-w-[640px]">
+        <a href="#/buat" class="card p-5 active:scale-[.99] transition">
+          <div class="w-11 h-11 rounded-[12px] bg-brand-500 grid place-items-center mb-3"><i data-lucide="file-plus" class="w-5 h-5 text-white"></i></div>
+          <div class="font-bold text-[15px] text-ink dark:text-white">Buat pengajuan</div>
+          <div class="text-[12px] text-slate-500 mt-0.5">Reimburse / purchase baru</div>
+        </a>
+        <a href="#/pengajuan" class="card p-5 active:scale-[.99] transition">
+          <div class="w-11 h-11 rounded-[12px] bg-accent-500 grid place-items-center mb-3"><i data-lucide="list" class="w-5 h-5 text-white"></i></div>
+          <div class="font-bold text-[15px] text-ink dark:text-white">Pengajuan</div>
+          <div class="text-[12px] text-slate-500 mt-0.5">Lihat &amp; lacak status</div>
+        </a>
+        <template x-if="$store.session.has('verifikator')||$store.session.has('approver')">
+          <a href="#/approvals" class="card p-5 active:scale-[.99] transition">
+            <div class="w-11 h-11 rounded-[12px] bg-amber-500 grid place-items-center mb-3"><i data-lucide="inbox" class="w-5 h-5 text-white"></i></div>
+            <div class="font-bold text-[15px] text-ink dark:text-white">Approval</div>
+            <div class="text-[12px] text-slate-500 mt-0.5">Antrian yang nunggu kamu</div>
+          </a>
+        </template>
+        <a href="#/rekening" class="card p-5 active:scale-[.99] transition">
+          <div class="w-11 h-11 rounded-[12px] bg-slate-600 grid place-items-center mb-3"><i data-lucide="wallet" class="w-5 h-5 text-white"></i></div>
+          <div class="font-bold text-[15px] text-ink dark:text-white">Rekening bank</div>
+          <div class="text-[12px] text-slate-500 mt-0.5">Kelola rekening kamu</div>
+        </a>
+        <template x-if="$store.session.has('admin')||$store.session.has('verifikator')">
+          <a href="#/monitored" class="card p-5 active:scale-[.99] transition">
+            <div class="w-11 h-11 rounded-[12px] bg-rose-500 grid place-items-center mb-3"><i data-lucide="radar" class="w-5 h-5 text-white"></i></div>
+            <div class="font-bold text-[15px] text-ink dark:text-white">Item dimonitor</div>
+            <div class="text-[12px] text-slate-500 mt-0.5">Anti pengajuan ganda</div>
+          </a>
+        </template>
+        <template x-if="$store.session.has('admin')">
+          <a href="#/projects" class="card p-5 active:scale-[.99] transition">
+            <div class="w-11 h-11 rounded-[12px] bg-indigo-500 grid place-items-center mb-3"><i data-lucide="folder-kanban" class="w-5 h-5 text-white"></i></div>
+            <div class="font-bold text-[15px] text-ink dark:text-white">Proyek</div>
+            <div class="text-[12px] text-slate-500 mt-0.5">Master kode unik</div>
+          </a>
+        </template>
+      </div>
+    </section>
+  </template>
+
+  <!-- ============ LIST ============ -->
+  <template x-if="$store.router.view==='list'">
+    <section x-data="pengajuanList()" x-init="init()" class="rise">
+      <div class="flex items-center gap-3 mb-5">
+        <div>
+          <h1 class="text-[24px] font-black tracking-tight text-ink dark:text-white">Pengajuan</h1>
+          <p class="text-[13px] text-slate-500">Reimburse &amp; purchase request</p>
+        </div>
+        <a href="#/buat" class="btn-primary ml-auto px-4 py-2.5 rounded-fld text-[13px] font-bold flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Buat pengajuan</a>
+      </div>
+      <div class="flex gap-2 mb-4">
+        <select x-model="filter.state" @change="load()" class="fld-sm max-w-[180px]">
+          <option value="">Semua status</option>
+          <option value="draft">Draft</option><option value="submitted">Menunggu verif</option>
+          <option value="verified">Terverifikasi</option><option value="approved">Disetujui</option>
+          <option value="rejected">Ditolak</option><option value="paid">Cair</option>
+        </select>
+        <select x-model="filter.kategori" @change="load()" class="fld-sm max-w-[180px]">
+          <option value="">Semua kategori</option>
+          <option value="reimbursement">Reimbursement</option><option value="pengajuan_baru">Pengajuan Baru</option>
+        </select>
+      </div>
+      <div class="card overflow-hidden">
+        <table class="w-full text-[13px]">
+          <thead class="text-[10px] uppercase tracking-wide text-slate-400 border-b border-line dark:border-white/10">
+            <tr><th class="text-left font-semibold px-4 py-3">NBR</th><th class="text-left font-semibold px-4 py-3">Nama</th><th class="text-left font-semibold px-4 py-3">Proyek</th><th class="text-right font-semibold px-4 py-3">Total</th><th class="text-left font-semibold px-4 py-3">Status</th></tr>
+          </thead>
+          <tbody>
+            <template x-if="loading"><tr><td colspan="5" class="px-4 py-8 text-center text-slate-400">Memuat…</td></tr></template>
+            <template x-if="!loading && rows.length===0"><tr><td colspan="5" class="px-4 py-10 text-center text-slate-400">Belum ada pengajuan.</td></tr></template>
+            <template x-for="r in rows" :key="r.id">
+              <tr @click="open(r.id)" class="border-b border-line/60 dark:border-white/[.05] hover:bg-line/40 dark:hover:bg-white/5 cursor-pointer">
+                <td class="px-4 py-3 font-mono text-[12px] font-semibold text-brand-500 dark:text-accent-400" x-text="r.nbr"></td>
+                <td class="px-4 py-3 font-semibold text-ink dark:text-white max-w-[280px] truncate" x-text="r.nama"></td>
+                <td class="px-4 py-3 text-slate-500" x-text="r.kodeProyek"></td>
+                <td class="px-4 py-3 text-right num font-semibold" x-text="rp(r.total)"></td>
+                <td class="px-4 py-3"><span class="px-2 py-1 rounded-chip text-[11px] font-semibold" :class="stateCls(r.state)" x-text="stateLabel(r.state)"></span></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </template>
+
+  <!-- ============ FORM ============ -->
+  <template x-if="$store.router.view==='form'">
+    <section x-data="pengajuanForm()" x-init="init()" class="rise max-w-[760px]">
+      <div class="flex items-center gap-2 mb-5">
+        <a href="#/pengajuan" class="p-2 rounded-fld text-slate-400 hover:bg-line/60 dark:hover:bg-white/5"><i data-lucide="arrow-left" class="w-4 h-4"></i></a>
+        <h1 class="text-[22px] font-black tracking-tight text-ink dark:text-white" x-text="editId ? 'Edit draft' : 'Buat pengajuan'"></h1>
+      </div>
+
+      <div class="card p-5 mb-4">
+        <div class="inline-flex p-1 rounded-fld border border-line dark:border-white/10 text-[13px] font-semibold mb-4">
+          <button @click="kategori='reimbursement'" :class="kategori==='reimbursement' ? 'bg-ink text-white' : 'text-slate-500'" class="px-3.5 py-1.5 rounded-chip">Reimbursement</button>
+          <button @click="kategori='pengajuan_baru'" :class="kategori==='pengajuan_baru' ? 'bg-ink text-white' : 'text-slate-500'" class="px-3.5 py-1.5 rounded-chip">Pengajuan Baru</button>
+        </div>
+        <label class="block mb-4"><span class="lbl">Nama pengajuan</span><input x-model="nama" class="fld" placeholder="cth. Operasional Project LiDAR Batch #3" /></label>
+        <div class="grid sm:grid-cols-3 gap-4">
+          <label class="block"><span class="lbl">Proyek</span><select x-model="kode" class="fld"><template x-for="p in projects" :key="p.kode"><option :value="p.kode" x-text="p.kode+' — '+p.deskripsi"></option></template></select></label>
+          <div><span class="lbl">Prioritas</span><div class="flex gap-2"><button type="button" @click="prioritas='urgent'" :class="prioritas==='urgent'?'bg-rose-500 text-white border-rose-500':'border-line text-slate-500'" class="flex-1 py-2 rounded-fld border text-[13px] font-semibold">Urgent</button><button type="button" @click="prioritas='not_urgent'" :class="prioritas==='not_urgent'?'bg-ink text-white border-ink':'border-line text-slate-500'" class="flex-1 py-2 rounded-fld border text-[13px] font-semibold">Santai</button></div></div>
+          <label class="block"><span class="lbl">Tanggal</span><input type="date" x-model="tanggal" class="fld" /></label>
+        </div>
+      </div>
+
+      <div class="card overflow-hidden mb-4">
+        <div class="px-5 pt-5 pb-2 text-[14px] font-bold text-ink dark:text-white">Rincian anggaran</div>
+        <div class="px-5 pb-2 space-y-2">
+          <template x-for="(it,i) in items" :key="i">
+            <div class="grid grid-cols-2 md:grid-cols-[1.6fr_.6fr_.7fr_1fr_auto] gap-2 items-center">
+              <input x-model="it.item" class="fld-sm col-span-2 md:col-span-1" placeholder="Item" />
+              <input x-model.number="it.qty" type="number" min="0" class="fld-sm num" placeholder="Qty" />
+              <input x-model="it.satuan" class="fld-sm" placeholder="Satuan" />
+              <input :value="fmtNum(it.harga)" @input="it.harga=parseNum($event.target.value)" inputmode="numeric" class="fld-sm num" placeholder="Harga" />
+              <button @click="removeItem(i)" :disabled="items.length===1" class="justify-self-end p-1.5 rounded-md text-slate-300 hover:text-rose-500 disabled:opacity-30"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            </div>
+          </template>
+        </div>
+        <div class="px-5 pb-4"><button @click="addItem()" class="w-full py-2.5 rounded-fld border border-dashed border-brand-200 dark:border-brand-400/30 text-brand-500 dark:text-accent-400 text-[13px] font-semibold hover:bg-brand-50 dark:hover:bg-brand-500/10 flex items-center justify-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Tambah baris</button></div>
+        <div class="total-bar px-5 py-4 flex items-center justify-between border-t-2 border-accent-500"><span class="text-white/55 text-[11px] font-semibold uppercase tracking-[.1em]">Total</span><span class="text-white text-[24px] font-black num" x-text="rp(total)"></span></div>
+      </div>
+
+      <div class="card p-5 mb-4">
+        <label class="block"><span class="lbl">Dana dicairkan ke rekening</span>
+          <select x-model="bankAccountId" class="fld"><option value="">— pilih rekening —</option><template x-for="r in rekenings" :key="r.id"><option :value="r.id" x-text="r.number+' '+r.bankName+' a.n '+r.holderName"></option></template></select>
+        </label>
+      </div>
+
+      <button @click="showPreview=true" type="button" class="w-full mb-3 py-2.5 rounded-fld border border-line dark:border-white/15 text-slate-600 dark:text-slate-200 text-[13px] font-semibold flex items-center justify-center gap-2 hover:bg-line/40 dark:hover:bg-white/5"><i data-lucide="eye" class="w-4 h-4"></i> Lihat preview dokumen</button>
+      <div class="flex gap-2.5">
+        <button @click="save(true)" :disabled="saving" class="btn-primary flex-1 py-3 rounded-fld text-[13px] font-bold flex items-center justify-center gap-2 disabled:opacity-60"><i data-lucide="send" class="w-4 h-4"></i> Simpan &amp; Submit</button>
+        <button @click="save(false)" :disabled="saving" class="py-3 px-4 rounded-fld border border-line dark:border-white/15 text-slate-600 dark:text-slate-200 font-bold text-[13px] disabled:opacity-60">Simpan draft</button>
+      </div>
+
+      <!-- preview modal -->
+      <div x-show="showPreview" x-transition.opacity class="fixed inset-0 z-50 bg-ink/50 backdrop-blur-sm flex items-start sm:items-center justify-center p-3 sm:p-6 overflow-y-auto" style="display:none" @click.self="showPreview=false" @keydown.escape.window="showPreview=false">
+        <div class="bg-white dark:bg-[#0c1022] rounded-card shadow-paper w-full max-w-[520px] my-auto">
+          <div class="flex items-center justify-between px-4 py-3 border-b border-line dark:border-white/10">
+            <span class="text-[13px] font-bold text-ink dark:text-white">Preview FORMULIR</span>
+            <button @click="showPreview=false" class="p-1.5 rounded-fld text-slate-400 hover:bg-line/60 dark:hover:bg-white/5"><i data-lucide="x" class="w-4 h-4"></i></button>
+          </div>
+          <div class="p-4 sm:p-5 max-h-[78vh] overflow-y-auto">
+            <div class="paper-doc formulir rounded-[3px] border border-line shadow-soft p-5 sm:p-7 text-[12px]">
+              <div class="flex items-start justify-between border-b-2 border-ink pb-2.5 mb-4">
+                <div><div class="font-sans font-black text-ink text-[16px] leading-none">FINA<span class="text-accent-600 font-medium"> go</span></div><div class="text-[9px] text-slate-400 font-sans mt-1 tracking-wide">PT. KARTA BHUMI NUSANTARA</div></div>
+                <div class="text-right"><div class="text-[8px] uppercase tracking-[.12em] text-slate-400 font-sans">No. Dokumen</div><div class="font-mono text-[10px] font-semibold text-ink mt-0.5" x-text="'BR•••/'+kode+'/'+katLabel.replace(' ','-')+'-'+(prioritas==='urgent'?'Urgent':'NotUrgent')"></div></div>
+              </div>
+              <div class="text-center font-sans font-semibold tracking-[.16em] text-[12px] uppercase mb-1 text-ink" x-text="'FORMULIR '+katLabel.toUpperCase()"></div>
+              <div class="text-center text-[12px] italic mb-4" :class="nama.trim()?'text-slate-500':'text-slate-300'" x-text="nama.trim()||'judul pengajuan…'"></div>
+              <table class="mb-3">
+                <thead><tr><th class="w-6">No</th><th class="text-left">Rincian Anggaran</th><th class="w-10">Qty</th><th class="w-9">Sat.</th><th class="w-20 text-right">Jumlah</th></tr></thead>
+                <tbody>
+                  <template x-for="(it,i) in items" :key="i"><tr><td class="text-center" x-text="i+1"></td><td :class="{'text-slate-300 italic':!it.item.trim()}" x-text="it.item.trim()||'item…'"></td><td class="text-center" x-text="it.qty||0"></td><td class="text-center" x-text="it.satuan||'-'"></td><td class="text-right" x-text="fmt((Number(it.qty)||0)*(Number(it.harga)||0))"></td></tr></template>
+                  <tr class="font-bold"><td colspan="4" class="text-right uppercase text-[10px] font-sans" style="background:#14b8a610">Total</td><td class="text-right" style="background:#14b8a610" x-text="'Rp'+fmt(total)"></td></tr>
+                </tbody>
+              </table>
+              <div class="text-[11px] mb-6"><span class="text-slate-500">*Dikirim ke Rekening:</span> <span class="font-semibold" x-text="rekeningStr"></span></div>
+              <div class="grid grid-cols-2 gap-3 text-center text-[11px]">
+                <div><div class="text-slate-500 mb-8">Prepared &amp; Requested by</div><div class="border-t border-slate-400 pt-1 font-semibold" x-text="$store.session.user?.nama||''"></div></div>
+                <div><div class="text-slate-500 mb-8">Approved by</div><div class="border-t border-slate-400 pt-1 font-semibold">—</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </template>
+
+  <!-- ============ DETAIL ============ -->
+  <template x-if="$store.router.view==='detail'">
+    <section x-data="pengajuanDetail()" x-init="init()" class="rise max-w-[760px]">
+      <div class="flex items-center gap-2 mb-5">
+        <a href="#/pengajuan" class="p-2 rounded-fld text-slate-400 hover:bg-line/60 dark:hover:bg-white/5"><i data-lucide="arrow-left" class="w-4 h-4"></i></a>
+        <h1 class="text-[22px] font-black tracking-tight text-ink dark:text-white">Detail pengajuan</h1>
+      </div>
+      <template x-if="loading"><div class="text-slate-400 py-10 text-center">Memuat…</div></template>
+      <template x-if="!loading && p">
+        <div>
+          <div class="card p-5 mb-4">
+            <div class="flex items-start justify-between mb-4">
+              <div>
+                <div class="font-mono text-[12px] font-semibold text-brand-500 dark:text-accent-400" x-text="p.nbr"></div>
+                <div class="text-[18px] font-black text-ink dark:text-white" x-text="p.nama"></div>
+              </div>
+              <span class="px-2.5 py-1 rounded-chip text-[12px] font-semibold" :class="stateCls(p.state)" x-text="stateLabel(p.state)"></span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[13px]">
+              <div><span class="lbl">Proyek</span><span x-text="p.kodeProyek"></span></div>
+              <div><span class="lbl">Kategori</span><span x-text="p.kategori==='reimbursement'?'Reimbursement':'Pengajuan Baru'"></span></div>
+              <div><span class="lbl">Prioritas</span><span x-text="p.prioritas==='urgent'?'Urgent':'Santai'"></span></div>
+              <div><span class="lbl">Tanggal</span><span x-text="p.tanggal"></span></div>
+            </div>
+          </div>
+
+          <div class="card overflow-hidden mb-4">
+            <table class="w-full text-[13px]">
+              <thead class="text-[10px] uppercase tracking-wide text-slate-400 border-b border-line dark:border-white/10"><tr><th class="text-left font-semibold px-4 py-2.5">Item</th><th class="text-center font-semibold px-4 py-2.5">Qty</th><th class="text-left font-semibold px-4 py-2.5">Sat.</th><th class="text-right font-semibold px-4 py-2.5">Subtotal</th></tr></thead>
+              <tbody>
+                <template x-for="it in p.items" :key="it.id">
+                  <tr class="border-b border-line/60 dark:border-white/[.05]"><td class="px-4 py-2.5 font-medium" x-text="it.item"></td><td class="px-4 py-2.5 text-center num" x-text="it.qty"></td><td class="px-4 py-2.5 text-slate-500" x-text="it.satuan||'-'"></td><td class="px-4 py-2.5 text-right num" x-text="rp(it.subtotal)"></td></tr>
+                </template>
+              </tbody>
+            </table>
+            <div class="total-bar px-4 py-3.5 flex items-center justify-between border-t-2 border-accent-500"><span class="text-white/55 text-[11px] font-semibold uppercase tracking-[.1em]">Total</span><span class="text-white text-[20px] font-black num" x-text="rp(p.total)"></span></div>
+          </div>
+
+          <!-- justifikasi (kalau kena flag anomali) -->
+          <template x-if="canJustify">
+            <div class="card p-5 mb-4 border-rose-200 dark:border-rose-500/30">
+              <div class="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold text-[14px] mb-2"><i data-lucide="alert-triangle" class="w-4 h-4"></i> Perlu justifikasi</div>
+              <p class="text-[13px] text-slate-600 dark:text-slate-300 mb-2">Pengajuan ini ke-flag mirip pengajuan sebelumnya. Tulis alasan biar verifikator bisa lanjut.</p>
+              <template x-if="anomaly && anomaly.reasons && anomaly.reasons.length">
+                <ul class="text-[12px] text-rose-600 dark:text-rose-400 list-disc pl-5 mb-3 space-y-0.5"><template x-for="r in anomaly.reasons" :key="r"><li x-text="r"></li></template></ul>
+              </template>
+              <textarea x-model="justifyText" rows="2" class="fld mb-3" placeholder="cth. Servis ini beda unit / kondisi darurat…"></textarea>
+              <button @click="justify()" :disabled="busy" class="btn-primary w-full py-2.5 rounded-fld text-[13px] font-bold disabled:opacity-60">Kirim justifikasi</button>
+            </div>
+          </template>
+
+          <!-- aksi -->
+          <div class="card p-5">
+            <div class="flex flex-wrap gap-2">
+              <template x-if="canEdit"><button @click="edit()" class="px-4 py-2.5 rounded-fld border border-line dark:border-white/15 font-bold text-[13px] flex items-center gap-2"><i data-lucide="pencil" class="w-4 h-4"></i> Edit</button></template>
+              <template x-if="canRevise"><button @click="edit()" class="btn-primary px-4 py-2.5 rounded-fld font-bold text-[13px] flex items-center gap-2"><i data-lucide="pencil" class="w-4 h-4"></i> Revisi</button></template>
+              <template x-if="canVerify"><button @click="act('/verify')" :disabled="busy" class="btn-primary px-4 py-2.5 rounded-fld font-bold text-[13px] flex items-center gap-2 disabled:opacity-60"><i data-lucide="check" class="w-4 h-4"></i> Verifikasi</button></template>
+              <template x-if="canApprove"><button @click="act('/approve')" :disabled="busy" class="btn-primary px-4 py-2.5 rounded-fld font-bold text-[13px] flex items-center gap-2 disabled:opacity-60"><i data-lucide="check-check" class="w-4 h-4"></i> Setujui</button></template>
+              <template x-if="canPay"><button @click="act('/pay')" :disabled="busy" class="px-4 py-2.5 rounded-fld bg-emerald-600 text-white font-bold text-[13px] flex items-center gap-2 disabled:opacity-60"><i data-lucide="banknote" class="w-4 h-4"></i> Tandai cair</button></template>
+              <template x-if="canReturn"><button @click="ret()" :disabled="busy" class="px-4 py-2.5 rounded-fld border border-line dark:border-white/15 font-bold text-[13px] flex items-center gap-2 disabled:opacity-60"><i data-lucide="corner-up-left" class="w-4 h-4"></i> Kembalikan</button></template>
+              <template x-if="canReject"><button @click="reject()" :disabled="busy" class="px-4 py-2.5 rounded-fld border border-rose-200 text-rose-600 font-bold text-[13px] flex items-center gap-2 disabled:opacity-60"><i data-lucide="x" class="w-4 h-4"></i> Tolak</button></template>
+              <template x-if="hasDoc"><button @click="download()" class="ml-auto px-4 py-2.5 rounded-fld border border-line dark:border-white/15 font-bold text-[13px] flex items-center gap-2"><i data-lucide="file-down" class="w-4 h-4"></i> Download .docx</button></template>
+            </div>
+          </div>
+        </div>
+      </template>
+    </section>
+  </template>
+
+  <!-- ============ APPROVALS ============ -->
+  <template x-if="$store.router.view==='approvals'">
+    <section x-data="approvalsQueue()" x-init="init()" class="rise">
+      <h1 class="text-[24px] font-black tracking-tight text-ink dark:text-white mb-1">Antrian approval</h1>
+      <p class="text-[13px] text-slate-500 mb-5">Pengajuan yang menunggu verifikasi / persetujuan</p>
+      <div class="card overflow-hidden">
+        <table class="w-full text-[13px]">
+          <thead class="text-[10px] uppercase tracking-wide text-slate-400 border-b border-line dark:border-white/10"><tr><th class="text-left font-semibold px-4 py-3">NBR</th><th class="text-left font-semibold px-4 py-3">Nama</th><th class="text-right font-semibold px-4 py-3">Total</th><th class="text-left font-semibold px-4 py-3">Status</th></tr></thead>
+          <tbody>
+            <template x-if="loading"><tr><td colspan="4" class="px-4 py-8 text-center text-slate-400">Memuat…</td></tr></template>
+            <template x-if="!loading && rows.length===0"><tr><td colspan="4" class="px-4 py-10 text-center text-slate-400">Antrian kosong 🎉</td></tr></template>
+            <template x-for="r in rows" :key="r.id">
+              <tr @click="open(r.id)" class="border-b border-line/60 dark:border-white/[.05] hover:bg-line/40 dark:hover:bg-white/5 cursor-pointer">
+                <td class="px-4 py-3 font-mono text-[12px] font-semibold text-brand-500 dark:text-accent-400" x-text="r.nbr"></td>
+                <td class="px-4 py-3 font-semibold max-w-[320px] truncate" x-text="r.nama"></td>
+                <td class="px-4 py-3 text-right num font-semibold" x-text="rp(r.total)"></td>
+                <td class="px-4 py-3"><span class="px-2 py-1 rounded-chip text-[11px] font-semibold" :class="stateCls(r.state)" x-text="stateLabel(r.state)"></span></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </template>
+
+  <!-- ============ REKENING ============ -->
+  <template x-if="$store.router.view==='rekening'">
+    <section x-data="rekeningView()" x-init="init()" class="rise max-w-[680px]">
+      <div class="flex items-center gap-3 mb-5">
+        <a href="#/" class="p-2 rounded-fld text-slate-400 hover:bg-line/60 dark:hover:bg-white/5"><i data-lucide="arrow-left" class="w-4 h-4"></i></a>
+        <div><h1 class="text-[22px] font-black tracking-tight text-ink dark:text-white">Rekening bank</h1><p class="text-[13px] text-slate-500">Reimburse cuma bisa ke rekening terverifikasi</p></div>
+        <button @click="showAdd=true" class="btn-primary ml-auto px-3.5 py-2.5 rounded-fld text-[13px] font-bold flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Tambah</button>
+      </div>
+      <template x-if="loading"><div class="text-slate-400 py-8 text-center text-[13px]">Memuat…</div></template>
+      <template x-if="!loading && mine.length===0"><div class="card p-8 text-center text-slate-400 text-[13px]">Belum ada rekening. Tambah dulu ya.</div></template>
+      <div class="space-y-2.5">
+        <template x-for="r in mine" :key="r.id">
+          <div class="card p-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-fld bg-brand-500/10 grid place-items-center text-brand-500 dark:text-accent-400 shrink-0"><i data-lucide="landmark" class="w-5 h-5"></i></div>
+            <div class="flex-1 min-w-0">
+              <div class="font-bold text-[14px] text-ink dark:text-white truncate" x-text="r.bankName+' · '+r.number"></div>
+              <div class="text-[12px] text-slate-500 truncate" x-text="'a.n '+r.holderName"></div>
+            </div>
+            <template x-if="r.isDefault"><span class="text-[10px] font-bold uppercase text-accent-600 dark:text-accent-400 shrink-0">Utama</span></template>
+            <span class="px-2 py-1 rounded-chip text-[11px] font-semibold shrink-0" :class="statusCls(r.status)" x-text="statusLabel(r.status)"></span>
+          </div>
+        </template>
+      </div>
+
+      <!-- verifikasi finance -->
+      <template x-if="canManage && pending.length">
+        <div class="mt-8">
+          <h2 class="text-[12px] font-bold uppercase tracking-wide text-slate-400 mb-3 flex items-center gap-2"><i data-lucide="shield-check" class="w-4 h-4"></i> Menunggu verifikasi (<span x-text="pending.length"></span>)</h2>
+          <div class="space-y-2.5">
+            <template x-for="r in pending" :key="r.id">
+              <div class="card p-4">
+                <div class="flex items-center gap-3 mb-3">
+                  <div class="w-10 h-10 rounded-fld bg-amber-500/10 grid place-items-center text-amber-600 shrink-0"><i data-lucide="clock" class="w-5 h-5"></i></div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-bold text-[14px] text-ink dark:text-white truncate" x-text="r.bankName+' · '+r.number"></div>
+                    <div class="text-[12px] text-slate-500 truncate" x-text="'a.n '+r.holderName+(r.userNama?(' · '+r.userNama):'')"></div>
+                  </div>
+                </div>
+                <div class="flex gap-2">
+                  <button @click="verify(r.id,'verified')" class="btn-primary flex-1 py-2 rounded-fld text-[12px] font-bold flex items-center justify-center gap-1.5"><i data-lucide="check" class="w-3.5 h-3.5"></i> Verifikasi</button>
+                  <button @click="verify(r.id,'rejected')" class="py-2 px-3 rounded-fld border border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 text-[12px] font-bold flex items-center gap-1.5"><i data-lucide="x" class="w-3.5 h-3.5"></i> Tolak</button>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+      </template>
+
+      <div x-show="showAdd" x-transition.opacity class="fixed inset-0 z-50 bg-ink/50 backdrop-blur-sm flex items-start sm:items-center justify-center p-3 sm:p-6 overflow-y-auto" style="display:none" @click.self="showAdd=false" @keydown.escape.window="showAdd=false">
+        <div class="bg-white dark:bg-[#0c1022] rounded-card shadow-paper w-full max-w-[420px] my-auto p-5">
+          <div class="flex items-center justify-between mb-4"><span class="text-[15px] font-bold text-ink dark:text-white">Tambah rekening</span><button @click="showAdd=false" class="p-1.5 rounded-fld text-slate-400 hover:bg-line/60 dark:hover:bg-white/5"><i data-lucide="x" class="w-4 h-4"></i></button></div>
+          <div class="space-y-3">
+            <label class="block"><span class="lbl">Nama bank</span><input x-model="f.bankName" class="fld" placeholder="Bank Mandiri" /></label>
+            <label class="block"><span class="lbl">Nomor rekening</span><input x-model="f.number" inputmode="numeric" class="fld" placeholder="1370…" /></label>
+            <label class="block"><span class="lbl">Atas nama</span><input x-model="f.holderName" class="fld" placeholder="Nama pemilik" /></label>
+            <label class="flex items-center gap-2 text-[13px] font-medium text-ink dark:text-slate-200"><input type="checkbox" x-model="f.isDefault" class="rounded accent-brand-500" /> Jadikan rekening utama</label>
+          </div>
+          <button @click="add()" :disabled="saving" class="btn-primary w-full mt-4 py-2.5 rounded-fld text-[13px] font-bold disabled:opacity-60">Simpan rekening</button>
+        </div>
+      </div>
+    </section>
+  </template>
+
+  <!-- ============ MONITORED ITEMS ============ -->
+  <template x-if="$store.router.view==='monitored'">
+    <section x-data="monitoredView()" x-init="init()" class="rise max-w-[680px]">
+      <div class="flex items-center gap-3 mb-5">
+        <a href="#/" class="p-2 rounded-fld text-slate-400 hover:bg-line/60 dark:hover:bg-white/5"><i data-lucide="arrow-left" class="w-4 h-4"></i></a>
+        <div><h1 class="text-[22px] font-black tracking-tight text-ink dark:text-white">Item dimonitor</h1><p class="text-[13px] text-slate-500">Deteksi pengajuan ganda / terlalu cepat</p></div>
+        <template x-if="canManage"><button @click="showAdd=true" class="btn-primary ml-auto px-3.5 py-2.5 rounded-fld text-[13px] font-bold flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Tambah</button></template>
+      </div>
+      <template x-if="loading"><div class="text-slate-400 py-8 text-center text-[13px]">Memuat…</div></template>
+      <template x-if="!loading && rows.length===0"><div class="card p-8 text-center text-slate-400 text-[13px]">Belum ada item dimonitor.</div></template>
+      <div class="space-y-2.5">
+        <template x-for="r in rows" :key="r.id">
+          <div class="card p-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-fld bg-accent-500/10 grid place-items-center text-accent-600 dark:text-accent-400 shrink-0"><i data-lucide="radar" class="w-5 h-5"></i></div>
+            <div class="flex-1 min-w-0">
+              <div class="font-bold text-[14px] text-ink dark:text-white truncate" x-text="r.name"></div>
+              <div class="text-[12px] text-slate-500 truncate" x-text="catLabel(r.category)+(r.expectedIntervalDays?(' · tiap ~'+r.expectedIntervalDays+' hari'):'')"></div>
+            </div>
+          </div>
+        </template>
+      </div>
+      <div x-show="showAdd" x-transition.opacity class="fixed inset-0 z-50 bg-ink/50 backdrop-blur-sm flex items-start sm:items-center justify-center p-3 sm:p-6 overflow-y-auto" style="display:none" @click.self="showAdd=false" @keydown.escape.window="showAdd=false">
+        <div class="bg-white dark:bg-[#0c1022] rounded-card shadow-paper w-full max-w-[420px] my-auto p-5">
+          <div class="flex items-center justify-between mb-4"><span class="text-[15px] font-bold text-ink dark:text-white">Tambah item monitor</span><button @click="showAdd=false" class="p-1.5 rounded-fld text-slate-400 hover:bg-line/60 dark:hover:bg-white/5"><i data-lucide="x" class="w-4 h-4"></i></button></div>
+          <div class="space-y-3">
+            <label class="block"><span class="lbl">Nama item</span><input x-model="f.name" class="fld" placeholder="Toyota Avanza B 1234 XYZ" /></label>
+            <label class="block"><span class="lbl">Kategori</span><select x-model="f.category" class="fld"><option value="vehicle">Kendaraan</option><option value="equipment">Alat</option><option value="software_license">Lisensi software</option><option value="consumable">Consumable</option><option value="other">Lainnya</option></select></label>
+            <label class="block"><span class="lbl">Interval wajar (hari)</span><input x-model.number="f.expectedIntervalDays" type="number" min="0" class="fld" placeholder="90" /></label>
+            <label class="block"><span class="lbl">Departemen pemilik</span><input x-model="f.ownerDepartment" class="fld" placeholder="PRO / ADM …" /></label>
+          </div>
+          <button @click="add()" :disabled="saving" class="btn-primary w-full mt-4 py-2.5 rounded-fld text-[13px] font-bold disabled:opacity-60">Simpan</button>
+        </div>
+      </div>
+    </section>
+  </template>
+
+  <!-- ============ PROJECTS ============ -->
+  <template x-if="$store.router.view==='projects'">
+    <section x-data="projectsView()" x-init="init()" class="rise max-w-[680px]">
+      <div class="flex items-center gap-3 mb-5">
+        <a href="#/" class="p-2 rounded-fld text-slate-400 hover:bg-line/60 dark:hover:bg-white/5"><i data-lucide="arrow-left" class="w-4 h-4"></i></a>
+        <div><h1 class="text-[22px] font-black tracking-tight text-ink dark:text-white">Proyek</h1><p class="text-[13px] text-slate-500">Master kode unik (REKAP COP)</p></div>
+        <template x-if="canManage"><button @click="showAdd=true" class="btn-primary ml-auto px-3.5 py-2.5 rounded-fld text-[13px] font-bold flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Tambah</button></template>
+      </div>
+      <template x-if="loading"><div class="text-slate-400 py-8 text-center text-[13px]">Memuat…</div></template>
+      <div class="space-y-2.5">
+        <template x-for="r in rows" :key="r.kode">
+          <div class="card p-4 flex items-center gap-3">
+            <span class="font-mono text-[12px] font-bold text-brand-500 dark:text-accent-400 shrink-0 w-16" x-text="r.kode"></span>
+            <div class="flex-1 min-w-0 text-[13px] font-medium text-ink dark:text-white truncate" x-text="r.deskripsi"></div>
+            <template x-if="!r.active"><span class="text-[10px] uppercase font-bold text-slate-400 shrink-0">nonaktif</span></template>
+          </div>
+        </template>
+      </div>
+      <div x-show="showAdd" x-transition.opacity class="fixed inset-0 z-50 bg-ink/50 backdrop-blur-sm flex items-start sm:items-center justify-center p-3 sm:p-6 overflow-y-auto" style="display:none" @click.self="showAdd=false" @keydown.escape.window="showAdd=false">
+        <div class="bg-white dark:bg-[#0c1022] rounded-card shadow-paper w-full max-w-[420px] my-auto p-5">
+          <div class="flex items-center justify-between mb-4"><span class="text-[15px] font-bold text-ink dark:text-white">Tambah proyek</span><button @click="showAdd=false" class="p-1.5 rounded-fld text-slate-400 hover:bg-line/60 dark:hover:bg-white/5"><i data-lucide="x" class="w-4 h-4"></i></button></div>
+          <div class="space-y-3">
+            <label class="block"><span class="lbl">Kode unik</span><input x-model="f.kode" class="fld" placeholder="PRO013" /></label>
+            <label class="block"><span class="lbl">Deskripsi proyek</span><input x-model="f.deskripsi" class="fld" placeholder="Nama / deskripsi proyek" /></label>
+          </div>
+          <button @click="add()" :disabled="saving" class="btn-primary w-full mt-4 py-2.5 rounded-fld text-[13px] font-bold disabled:opacity-60">Simpan</button>
+        </div>
+      </div>
+    </section>
+  </template>
+
+</main>
+
+<!-- toast -->
+<div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 hidden">
+  <div id="toast-box" class="text-white text-[13px] font-semibold px-4 py-2.5 rounded-fld shadow-paper flex items-center gap-2 bg-ink"><i id="toast-icon" data-lucide="check-circle-2" class="w-4 h-4 text-accent-400"></i><span id="toast-msg"></span></div>
+</div>
+
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script type="module" src="main.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<script>window.addEventListener('load',()=>window.lucide?.createIcons());document.addEventListener('alpine:initialized',()=>setTimeout(()=>window.lucide?.createIcons(),50));</script>
+</body>
+</html>

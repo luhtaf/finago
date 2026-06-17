@@ -145,3 +145,9 @@ Saat design demo, coba pinjam pola dari salah satu (jangan plek-plekan, sesuaika
 | 2026-06-13 | Fathul | Initial setup repo, polyrepo strategy disepakati |
 | 2026-06-13 | Fathul | Brand identity: logo + navy/teal |
 | 2026-06-13 | Fathul | Stack vanilla + Alpine.js disepakati |
+| 2026-06-15 | Fathul | Requirement form: line-item + auto-hitung total → output docx FORMULIR (ganti free-text). Demo `demo/index.html` jadi. |
+| 2026-06-15 | Fathul | Stack BE dikunci: Hono + Drizzle + Turso/libSQL, R2(hot)→OneDrive(cold) via Graph async outbox, docxtemplater. Lihat `PLAN-BE.md`. |
+| 2026-06-15 | Fathul | Konvensi repo: feature-based + CLAUDE.md per fitur; guardrail global di CLAUDE.md utama gak bisa di-override. |
+| 2026-06-15 | Fathul | Desain UI: Hybrid (Satoshi app + Newsreader dokumen), flat + gradient tipis di elemen hero, token Tailwind custom. |
+| 2026-06-17 | Fathul | FE asli (`app/`) full: auth sendiri (JWT email+pw), main menu, preview FORMULIR popup (bukan side-by-side), rekening/monitored/projects. Mobile-friendly. |
+| 2026-06-17 | Fathul | BE: auth feature (JWT+scrypt), R2 FS-backed (dev), Graph real-with-env. Dibangun fan-out 5 subagent paralel. Semua fitur FE+BE kelar. |
