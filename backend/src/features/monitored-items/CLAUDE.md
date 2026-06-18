@@ -4,39 +4,40 @@
 
 ## Cerita fitur
 
-Deteksi anomali pengajuan. **Monitored item** = barang/aset yang punya pola pakai wajar (mis. ganti oli kendaraan tiap 90 hari, beli toner printer, lisensi software tahunan). Kalau ada pengajuan yang nyebut barang ini terlalu cepat dari interval normalnya → kemungkinan double-claim / pengajuan ganda → di-flag biar verifikator waspada.
+Deteksi pengajuan ganda buat aset/biaya berpola (servis kendaraan, toner, lisensi, dll). **Manual, bukan auto fuzzy** — fuzzy match dulu dibuang karena rapuh (harus exact). Sekarang: verifikator **nandai** baris pengajuan ke monitored item dari daftar.
 
-## Konsep 3 layer
+## Alur (manual tag)
 
-1. **Layer 1 — match**: cocokin item pengajuan ke daftar monitored item (substring + token-overlap, dependency-free; lihat TODO buat fuzzy beneran).
-2. **Layer 2 — interval check**: kalau cocok DAN `lastEventAt` + `expectedIntervalDays` terisi DAN umur event terakhir < `expectedIntervalDays * 0.5` hari → push reason.
-3. **Layer 3 — justifikasi**: BUKAN di sini. Hidup di flow `pengajuan` submit — kalau `checkAnomaly` balikin `flagged: true`, pengajuan masuk state `needs_justification` dan pengaju diminta kasih alasan. Fitur ini cuma sediakan sinyalnya.
+1. Admin/verifikator daftarin monitored item (`name`, `category`, `expectedIntervalDays`). `lastEventAt` boleh kosong.
+2. Pas review, verifikator nandai `pengajuan_item` → monitored item (`POST /pengajuan-items/:itemId/monitor`). Kalau monitored item itu **baru kepakai < ½ interval** → balikin `warning` (rawan ganda).
+3. Pas pengajuan di-**verify** (fitur `approval`), `touchOnVerify` update `lastEventAt` = now buat semua monitored item yang ditandai di pengajuan itu. Ini yang bikin pengajuan berikutnya kena warning.
 
-## Kontrak ekspor (JANGAN diubah sembarangan)
+## Kontrak ekspor (jangan diubah sembarangan)
 
 ```ts
-export async function checkAnomaly(pengajuanId: string): Promise<{ flagged: boolean; reasons: string[] }>
+checkAnomaly(pengajuanId): Promise<{ flagged; reasons; matched }>   // baca item yang DITANDAI
+tagPengajuanItem(pengajuanItemId, monitoredItemId|null, actorId?): Promise<{ ok; warning }>
+touchOnVerify(pengajuanId, when?): Promise<string[]>                // dipanggil approval.verify
 ```
 
-⚠️ Fitur `pengajuan` meng-import `checkAnomaly` saat submit. Signature ini bagian dari kontrak lintas-fitur — ubah = update consumer `pengajuan/service`.
+⚠️ `pengajuan/service` import `checkAnomaly` (submit) — return shape jangan diubah. `approval/service` import `touchOnVerify` (verify).
 
-## Endpoints (full-path, mounted di `/`)
+## Endpoints (mounted di `/`)
 
-| Method | Path | Role | Body |
-|---|---|---|---|
-| GET | `/monitored-items` | login | — |
-| POST | `/monitored-items` | admin/verifikator | `{ name, category?, lastEventAt?, expectedIntervalDays?, ownerDepartment?, watchedBy? }` |
-| PATCH | `/monitored-items/:id` | admin/verifikator | partial dari POST |
-| GET | `/pengajuan/:id/anomaly` | login | — → `{ flagged, reasons }` |
+| Method | Path | Role |
+|---|---|---|
+| GET | `/monitored-items` | login |
+| POST | `/monitored-items` | admin/verifikator |
+| PATCH | `/monitored-items/:id` | admin/verifikator |
+| GET | `/pengajuan/:id/anomaly` | login → `{flagged, reasons, matched}` |
+| POST | `/pengajuan-items/:itemId/monitor` | verifikator/admin → `{monitoredItemId\|null}` |
 
-## Tabel yang disentuh
+## Tabel
 
-- `monitored_items` — read/write (CRUD).
-- `pengajuan` + `pengajuan_item` — read-only (bahan haystack di `checkAnomaly`).
-- `audit_log` — via `writeAudit` (entity `monitored_item`, action create / update).
+- `monitored_items` — CRUD.
+- `pengajuan_item.monitored_item_id` — FK tag (di-set di sini).
+- `audit_log` — create/update/tag_monitor/untag_monitor.
 
 ## Catatan
 
-- Matching murni substring + token-overlap (no fuzzy lib). **TODO**: ganti dengan trigram / Levenshtein / fuse.js biar tahan typo.
-- Auth masih STUB (`getUser` balikin demo user dengan semua role).
-- Mount di `src/index.ts`: `app.route('/', monitoredItemsRoutes)`.
+- Submit pengajuan **gak auto-flag lagi** (belum ditandai) — flag/warning muncul pas verifikator nandai / di kartu "Item dimonitor" di FE detail.

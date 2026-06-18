@@ -17,7 +17,7 @@ const DRIVE_ID = process.env.GRAPH_DRIVE_ID;
 const WORKBOOK_ITEM_ID = process.env.GRAPH_WORKBOOK_ITEM_ID;
 const FOLDER_PATH = process.env.GRAPH_FOLDER_PATH;
 
-const WORKBOOK_TABLE_NAME = 'Table1';
+const WORKBOOK_TABLE_NAME = process.env.GRAPH_WORKBOOK_TABLE ?? 'Table1';
 const DOCX_CONTENT_TYPE =
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 

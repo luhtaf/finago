@@ -10,6 +10,9 @@ import { rekeningRoutes } from './features/rekening/routes';
 import { monitoredItemsRoutes } from './features/monitored-items/routes';
 import { projectsRoutes } from './features/projects/routes';
 import { syncRoutes } from './features/sync-onedrive/routes';
+import { usersRoutes } from './features/users/routes';
+import { dashboardRoutes } from './features/dashboard/routes';
+import { startCron } from './features/sync-onedrive/consumer';
 
 const app = new Hono();
 app.use('*', logger());
@@ -30,6 +33,8 @@ app.route('/', rekeningRoutes);
 app.route('/', monitoredItemsRoutes);
 app.route('/', projectsRoutes);
 app.route('/', syncRoutes);
+app.route('/', usersRoutes);
+app.route('/', dashboardRoutes);
 
 export default app;
 
@@ -38,4 +43,9 @@ if (process.env.NODE_ENV !== 'test') {
   const port = Number(process.env.PORT ?? 8787);
   serve({ fetch: app.fetch, port });
   console.log(`FINA go API → http://localhost:${port}`);
+  // Cron sync OneDrive: nyala kalau SYNC_CRON=on (default mati biar gak nembak Graph pas dev).
+  if (process.env.SYNC_CRON === 'on') {
+    startCron();
+    console.log('Sync OneDrive cron: ON (tiap 5 menit)');
+  }
 }

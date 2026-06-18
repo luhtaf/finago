@@ -88,7 +88,8 @@ Arsitektur: **vertical slice / feature-based**, bukan layer-based (jangan misah 
 Direncanakan di `PLAN-BE.md` (jadi wajib dipatuhi pas implementasi):
 - `pengajuan` ⇄ `sync-onedrive`: ubah skema tabel `pengajuan`/`pengajuan_item` → cek mapping kolom di consumer sync + Workbook API.
 - `sync-onedrive`: ada **cron** baca tabel `outbox_events` → Graph API. Jangan ubah `type`/`payload` event tanpa update consumer. Idempotent pakai `nbr`.
-- `pengajuan` → `monitored-items`: `POST /pengajuan/:id/submit` men-trigger anomaly check.
+- `monitored-items` itu **flag boolean sederhana** `pengajuan_item.monitored` (bukan master/interval/fuzzy). Verifikator toggle on/off lewat `POST /pengajuan-items/:itemId/monitor {on}`. `GET /monitored-items` = daftar item ber-flag (lintas pengajuan). `checkAnomaly` masih ada (dipakai submit) tapi gak auto-flag.
+- ⚠️ Migrasi belum bersih: kolom `pengajuan_item.monitored` ditambah manual (ALTER) ke `local.db`; `monitored_item_id` + tabel `monitored_items` jadi **dead** (sisa model lama). TODO: regen `drizzle/` dari nol pas skema stabil.
 - `pengajuan.total` di-hitung & di-store di service (sum `pengajuan_item.subtotal`) — jangan percaya angka dari FE.
 
 ## Yang belum jelas — tanya user

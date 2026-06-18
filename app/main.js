@@ -4,6 +4,8 @@ import { approvalsQueue } from './features/approval.js';
 import { rekeningView } from './features/rekening.js';
 import { monitoredView } from './features/monitored.js';
 import { projectsView } from './features/projects.js';
+import { usersView } from './features/users.js';
+import { dashboardView } from './features/dashboard.js';
 
 function parseRoute() {
   const h = (location.hash.slice(1) || '/');
@@ -15,6 +17,8 @@ function parseRoute() {
   if (parts[0] === 'rekening') return { view: 'rekening', id: null };
   if (parts[0] === 'monitored') return { view: 'monitored', id: null };
   if (parts[0] === 'projects') return { view: 'projects', id: null };
+  if (parts[0] === 'users') return { view: 'users', id: null };
+  if (parts[0] === 'dashboard') return { view: 'dashboard', id: null };
   if (parts[0] === 'pengajuan') {
     if (parts[1] && parts[2] === 'edit') return { view: 'form', id: parts[1] };
     if (parts[1]) return { view: 'detail', id: parts[1] };
@@ -62,6 +66,8 @@ document.addEventListener('alpine:init', () => {
   Alpine.data('rekeningView', rekeningView);
   Alpine.data('monitoredView', monitoredView);
   Alpine.data('projectsView', projectsView);
+  Alpine.data('usersView', usersView);
+  Alpine.data('dashboardView', dashboardView);
 
   window.addEventListener('hashchange', () => { Alpine.store('router').sync(); });
 });

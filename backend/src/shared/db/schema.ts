@@ -64,6 +64,8 @@ export const pengajuanItem = sqliteTable('pengajuan_item', {
   satuan: text('satuan'),
   harga: integer('harga').notNull().default(0),
   subtotal: integer('subtotal').notNull().default(0),
+  // flag "item ini dipantau" — di-toggle manual oleh verifikator. Simpel: on/off, no interval.
+  monitored: integer('monitored', { mode: 'boolean' }).notNull().default(false),
 });
 
 // ── monitored items (anomaly detection) ───────────────────────────────

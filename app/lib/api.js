@@ -24,6 +24,21 @@ export const api = {
   get: (p) => req('GET', p),
   post: (p, b) => req('POST', p, b),
   patch: (p, b) => req('PATCH', p, b),
+  // fetch file dengan auth → object URL (buat <img> / link, karena <img> ga bisa kirim header)
+  async blobUrl(path) {
+    const res = await fetch(API_BASE + path, { headers: authHeaders() });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return URL.createObjectURL(await res.blob());
+  },
+  // upload file (multipart) → { key, url }
+  async upload(path, file) {
+    const fd = new FormData();
+    fd.append('file', file);
+    const res = await fetch(API_BASE + path, { method: 'POST', headers: authHeaders(), body: fd });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Upload gagal');
+    return data;
+  },
   // download file (docx) → trigger browser save
   async download(path, filename) {
     const res = await fetch(API_BASE + path, { headers: authHeaders() });

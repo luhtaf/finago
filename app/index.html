@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#1e2a8e" />
 <title>FINA go</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231e2a8e'%3E%3Crect width='24' height='24' rx='6'/%3E%3Cpath d='M7 17V7h7M7 12h6' stroke='%2314b8a6' stroke-width='2' stroke-linecap='round' fill='none'/%3E%3C/svg%3E" />
+<link rel="icon" href="icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="icon-180.png" />
+<link rel="manifest" href="manifest.webmanifest" />
 <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin /><link rel="preconnect" href="https://api.fontshare.com" crossorigin />
 <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap" rel="stylesheet" />
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
@@ -33,7 +35,8 @@
   [x-cloak]{ display:none !important; }
   .num { font-feature-settings:'tnum' 1; font-variant-numeric:tabular-nums; }
   @keyframes rise { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
-  .rise { animation:rise .35s cubic-bezier(.2,.7,.2,1) both; }
+  /* NOTE: tanpa fill-mode 'both' — kalau transform nyangkut, modal fixed di dalamnya jadi ke-clip (bukan full-screen). */
+  .rise { animation:rise .35s cubic-bezier(.2,.7,.2,1); }
   input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   input[type=number]{-moz-appearance:textfield}
   .lbl { display:block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8589a0;margin-bottom:6px }
@@ -61,9 +64,8 @@
 <!-- NAV -->
 <nav class="sticky top-0 z-40 bg-paper/85 dark:bg-[#070a14]/85 backdrop-blur border-b border-line dark:border-white/[.07]">
   <div class="max-w-[1180px] mx-auto px-5 h-14 flex items-center gap-3">
-    <a href="#/pengajuan" class="flex items-center gap-2.5 font-bold text-ink dark:text-white tracking-tight">
-      <span class="w-8 h-8 rounded-[9px] bg-brand-500 grid place-items-center"><span class="font-black text-white text-sm">F</span></span>
-      <span class="text-[15px]">FINA<span class="text-accent-500 font-medium"> go</span></span>
+    <a href="#/" class="flex items-center font-bold text-ink dark:text-white tracking-tight">
+      <span class="text-[17px]">FINA<span class="text-accent-500 font-medium"> go</span></span>
     </a>
     <template x-if="$store.session.authed">
       <div class="flex items-center gap-1 ml-2 text-[13px] font-semibold">
@@ -95,9 +97,8 @@
   <template x-if="$store.router.view==='login'">
     <section x-data="loginView()" class="rise max-w-[400px] mx-auto mt-12">
       <div class="text-center mb-7">
-        <div class="w-12 h-12 rounded-[12px] bg-brand-500 grid place-items-center mx-auto mb-4"><span class="font-black text-white text-xl">F</span></div>
-        <h1 class="text-[22px] font-black tracking-tight text-ink dark:text-white">Masuk ke FINA go</h1>
-        <p class="text-[13px] text-slate-500 mt-1">PT. Karta Bhumi Nusantara</p>
+        <div class="mx-auto mb-5 w-fit dark:bg-white dark:rounded-2xl dark:px-5 dark:py-3"><img src="finago-logo.png" alt="FINA go — PT. Karta Bhumi Nusantara" class="h-14 sm:h-16" /></div>
+        <h1 class="text-[20px] font-black tracking-tight text-ink dark:text-white">Masuk</h1>
       </div>
       <form @submit.prevent="submit()" class="card p-5 space-y-4">
         <label class="block"><span class="lbl">Email</span><input x-model="email" type="email" autocomplete="username" class="fld" placeholder="nama@kartabhumi.id" /></label>
@@ -105,7 +106,12 @@
         <template x-if="err"><div class="text-[12px] text-rose-600 dark:text-rose-400 font-medium flex items-center gap-1.5"><i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> <span x-text="err"></span></div></template>
         <button type="submit" :disabled="busy" class="btn-primary w-full py-3 rounded-fld text-[13px] font-bold disabled:opacity-60"><span x-text="busy?'Masuk…':'Masuk'"></span></button>
       </form>
-      <p class="text-center text-[11px] text-slate-400 mt-4">Demo: <span class="font-mono text-slate-500 dark:text-slate-400">bagus@kartabhumi.id</span> · <span class="font-mono text-slate-500 dark:text-slate-400">fina123</span></p>
+      <div class="text-center text-[11px] text-slate-400 mt-4 space-y-1">
+        <div class="font-semibold text-slate-500 dark:text-slate-400">Akun demo · password <span class="font-mono">fina123</span></div>
+        <div><span class="font-mono text-slate-500 dark:text-slate-300">bagus@kartabhumi.id</span> — pengaju</div>
+        <div><span class="font-mono text-slate-500 dark:text-slate-300">adinda@kartabhumi.id</span> — admin (semua role)</div>
+        <div><span class="font-mono text-slate-500 dark:text-slate-300">wahyu@kartabhumi.id</span> — approver &amp; verifikator</div>
+      </div>
     </section>
   </template>
 
@@ -140,11 +146,25 @@
           <div class="font-bold text-[15px] text-ink dark:text-white">Rekening bank</div>
           <div class="text-[12px] text-slate-500 mt-0.5">Kelola rekening kamu</div>
         </a>
+        <template x-if="$store.session.has('admin')||$store.session.has('verifikator')||$store.session.has('approver')">
+          <a href="#/dashboard" class="card p-5 active:scale-[.99] transition">
+            <div class="w-11 h-11 rounded-[12px] bg-emerald-600 grid place-items-center mb-3"><i data-lucide="bar-chart-3" class="w-5 h-5 text-white"></i></div>
+            <div class="font-bold text-[15px] text-ink dark:text-white">Dashboard</div>
+            <div class="text-[12px] text-slate-500 mt-0.5">Visualisasi &amp; filter data</div>
+          </a>
+        </template>
         <template x-if="$store.session.has('admin')||$store.session.has('verifikator')">
           <a href="#/monitored" class="card p-5 active:scale-[.99] transition">
-            <div class="w-11 h-11 rounded-[12px] bg-rose-500 grid place-items-center mb-3"><i data-lucide="radar" class="w-5 h-5 text-white"></i></div>
-            <div class="font-bold text-[15px] text-ink dark:text-white">Item dimonitor</div>
-            <div class="text-[12px] text-slate-500 mt-0.5">Anti pengajuan ganda</div>
+            <div class="w-11 h-11 rounded-[12px] bg-rose-500 grid place-items-center mb-3"><i data-lucide="eye" class="w-5 h-5 text-white"></i></div>
+            <div class="font-bold text-[15px] text-ink dark:text-white">Item dipantau</div>
+            <div class="text-[12px] text-slate-500 mt-0.5">Yang ditandai dari pengajuan</div>
+          </a>
+        </template>
+        <template x-if="$store.session.has('admin')||$store.session.has('approver')">
+          <a href="#/users" class="card p-5 active:scale-[.99] transition">
+            <div class="w-11 h-11 rounded-[12px] bg-violet-600 grid place-items-center mb-3"><i data-lucide="users" class="w-5 h-5 text-white"></i></div>
+            <div class="font-bold text-[15px] text-ink dark:text-white">Pengguna</div>
+            <div class="text-[12px] text-slate-500 mt-0.5">Kelola user &amp; role</div>
           </a>
         </template>
         <template x-if="$store.session.has('admin')">
@@ -219,7 +239,7 @@
         <label class="block mb-4"><span class="lbl">Nama pengajuan</span><input x-model="nama" class="fld" placeholder="cth. Operasional Project LiDAR Batch #3" /></label>
         <div class="grid sm:grid-cols-3 gap-4">
           <label class="block"><span class="lbl">Proyek</span><select x-model="kode" class="fld"><template x-for="p in projects" :key="p.kode"><option :value="p.kode" x-text="p.kode+' — '+p.deskripsi"></option></template></select></label>
-          <div><span class="lbl">Prioritas</span><div class="flex gap-2"><button type="button" @click="prioritas='urgent'" :class="prioritas==='urgent'?'bg-rose-500 text-white border-rose-500':'border-line text-slate-500'" class="flex-1 py-2 rounded-fld border text-[13px] font-semibold">Urgent</button><button type="button" @click="prioritas='not_urgent'" :class="prioritas==='not_urgent'?'bg-ink text-white border-ink':'border-line text-slate-500'" class="flex-1 py-2 rounded-fld border text-[13px] font-semibold">Santai</button></div></div>
+          <div><span class="lbl">Prioritas</span><div class="flex gap-2"><button type="button" @click="prioritas='urgent'" :class="prioritas==='urgent'?'bg-rose-500 text-white border-rose-500':'border-line text-slate-500'" class="flex-1 py-2 rounded-fld border text-[13px] font-semibold">Urgent</button><button type="button" @click="prioritas='not_urgent'" :class="prioritas==='not_urgent'?'bg-ink text-white border-ink':'border-line text-slate-500'" class="flex-1 py-2 rounded-fld border text-[13px] font-semibold">Biasa</button></div></div>
           <label class="block"><span class="lbl">Tanggal</span><input type="date" x-model="tanggal" class="fld" /></label>
         </div>
       </div>
@@ -241,10 +261,21 @@
         <div class="total-bar px-5 py-4 flex items-center justify-between border-t-2 border-accent-500"><span class="text-white/55 text-[11px] font-semibold uppercase tracking-[.1em]">Total</span><span class="text-white text-[24px] font-black num" x-text="rp(total)"></span></div>
       </div>
 
-      <div class="card p-5 mb-4">
+      <div class="card p-5 mb-4 space-y-4">
         <label class="block"><span class="lbl">Dana dicairkan ke rekening</span>
           <select x-model="bankAccountId" class="fld"><option value="">— pilih rekening —</option><template x-for="r in rekenings" :key="r.id"><option :value="r.id" x-text="r.number+' '+r.bankName+' a.n '+r.holderName"></option></template></select>
         </label>
+        <div class="block">
+          <span class="lbl">Lampiran nota / bukti (foto)</span>
+          <input type="file" multiple accept="image/*" @change="onNotaChange($event)" x-ref="notaInput" class="hidden" />
+          <button type="button" @click="$refs.notaInput.click()" class="w-full py-2.5 rounded-fld border border-dashed border-brand-300 dark:border-brand-400/40 text-brand-500 dark:text-accent-400 text-[13px] font-semibold hover:bg-brand-50 dark:hover:bg-brand-500/10 flex items-center justify-center gap-2"><i data-lucide="paperclip" class="w-4 h-4"></i> Lampirkan bukti</button>
+          <div x-show="notaPreviews.length" class="grid grid-cols-4 gap-2 mt-3">
+            <template x-for="(n,i) in notaPreviews" :key="i">
+              <div class="rounded-fld overflow-hidden border border-line dark:border-white/10 aspect-square"><img :src="n.url" class="w-full h-full object-cover" /></div>
+            </template>
+          </div>
+          <span class="text-[11px] text-accent-600 dark:text-accent-400 font-medium mt-2 inline-flex items-center gap-1" x-show="notaCount"><i data-lucide="image" class="w-3 h-3"></i> <span x-text="notaCount + ' bukti — ikut ke-embed di .docx'"></span></span>
+        </div>
       </div>
 
       <button @click="showPreview=true" type="button" class="w-full mb-3 py-2.5 rounded-fld border border-line dark:border-white/15 text-slate-600 dark:text-slate-200 text-[13px] font-semibold flex items-center justify-center gap-2 hover:bg-line/40 dark:hover:bg-white/5"><i data-lucide="eye" class="w-4 h-4"></i> Lihat preview dokumen</button>
@@ -308,17 +339,45 @@
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[13px]">
               <div><span class="lbl">Proyek</span><span x-text="p.kodeProyek"></span></div>
               <div><span class="lbl">Kategori</span><span x-text="p.kategori==='reimbursement'?'Reimbursement':'Pengajuan Baru'"></span></div>
-              <div><span class="lbl">Prioritas</span><span x-text="p.prioritas==='urgent'?'Urgent':'Santai'"></span></div>
+              <div><span class="lbl">Prioritas</span><span x-text="p.prioritas==='urgent'?'Urgent':'Biasa'"></span></div>
               <div><span class="lbl">Tanggal</span><span x-text="p.tanggal"></span></div>
             </div>
+            <template x-if="p.notaUrl"><div class="mt-3 pt-3 border-t border-line dark:border-white/10 text-[12px] text-slate-500 flex items-center gap-1.5"><i data-lucide="paperclip" class="w-3.5 h-3.5"></i> Ada lampiran bukti — ikut di .docx</div></template>
           </div>
+
+          <!-- lampiran / bukti (tampil) -->
+          <template x-if="notaUrls.length">
+            <div class="card p-5 mb-4">
+              <div class="flex items-center gap-2 text-[13px] font-bold text-ink dark:text-white mb-3"><i data-lucide="image" class="w-4 h-4 text-slate-400"></i> Lampiran / Bukti</div>
+              <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                <template x-for="n in notaUrls" :key="n.key">
+                  <a :href="n.url" target="_blank" rel="noopener" class="block rounded-fld overflow-hidden border border-line dark:border-white/10 aspect-square hover:opacity-90 transition"><img :src="n.url" class="w-full h-full object-cover" /></a>
+                </template>
+              </div>
+            </div>
+          </template>
 
           <div class="card overflow-hidden mb-4">
             <table class="w-full text-[13px]">
               <thead class="text-[10px] uppercase tracking-wide text-slate-400 border-b border-line dark:border-white/10"><tr><th class="text-left font-semibold px-4 py-2.5">Item</th><th class="text-center font-semibold px-4 py-2.5">Qty</th><th class="text-left font-semibold px-4 py-2.5">Sat.</th><th class="text-right font-semibold px-4 py-2.5">Subtotal</th></tr></thead>
               <tbody>
                 <template x-for="it in p.items" :key="it.id">
-                  <tr class="border-b border-line/60 dark:border-white/[.05]"><td class="px-4 py-2.5 font-medium" x-text="it.item"></td><td class="px-4 py-2.5 text-center num" x-text="it.qty"></td><td class="px-4 py-2.5 text-slate-500" x-text="it.satuan||'-'"></td><td class="px-4 py-2.5 text-right num" x-text="rp(it.subtotal)"></td></tr>
+                  <tr class="border-b border-line/60 dark:border-white/[.05] align-top">
+                    <td class="px-4 py-2.5 font-medium">
+                      <div class="flex items-center gap-1.5">
+                        <span x-text="it.item"></span>
+                        <template x-if="canTag">
+                          <button @click="toggleMonitor(it)" class="shrink-0 inline-grid place-items-center w-5 h-5 rounded-md transition" :class="it.monitored ? 'text-accent-600 dark:text-accent-400 bg-accent-500/10' : 'text-slate-300 hover:text-slate-500 hover:bg-line/60 dark:hover:bg-white/5'" :title="it.monitored ? 'Dipantau — klik buat lepas' : 'Tandai dipantau'"><i :data-lucide="it.monitored ? 'eye' : 'eye-off'" class="w-3.5 h-3.5"></i></button>
+                        </template>
+                        <template x-if="!canTag && it.monitored">
+                          <i data-lucide="eye" class="w-3.5 h-3.5 text-accent-500" title="Dipantau"></i>
+                        </template>
+                      </div>
+                    </td>
+                    <td class="px-4 py-2.5 text-center num" x-text="it.qty"></td>
+                    <td class="px-4 py-2.5 text-slate-500" x-text="it.satuan||'-'"></td>
+                    <td class="px-4 py-2.5 text-right num" x-text="rp(it.subtotal)"></td>
+                  </tr>
                 </template>
               </tbody>
             </table>
@@ -343,12 +402,45 @@
             <div class="flex flex-wrap gap-2">
               <template x-if="canEdit"><button @click="edit()" class="px-4 py-2.5 rounded-fld border border-line dark:border-white/15 font-bold text-[13px] flex items-center gap-2"><i data-lucide="pencil" class="w-4 h-4"></i> Edit</button></template>
               <template x-if="canRevise"><button @click="edit()" class="btn-primary px-4 py-2.5 rounded-fld font-bold text-[13px] flex items-center gap-2"><i data-lucide="pencil" class="w-4 h-4"></i> Revisi</button></template>
+              <template x-if="canTag"><button @click="openMonitoredList()" class="px-4 py-2.5 rounded-fld border border-line dark:border-white/15 font-bold text-[13px] flex items-center gap-2"><i data-lucide="eye" class="w-4 h-4"></i> Item dipantau</button></template>
               <template x-if="canVerify"><button @click="act('/verify')" :disabled="busy" class="btn-primary px-4 py-2.5 rounded-fld font-bold text-[13px] flex items-center gap-2 disabled:opacity-60"><i data-lucide="check" class="w-4 h-4"></i> Verifikasi</button></template>
               <template x-if="canApprove"><button @click="act('/approve')" :disabled="busy" class="btn-primary px-4 py-2.5 rounded-fld font-bold text-[13px] flex items-center gap-2 disabled:opacity-60"><i data-lucide="check-check" class="w-4 h-4"></i> Setujui</button></template>
               <template x-if="canPay"><button @click="act('/pay')" :disabled="busy" class="px-4 py-2.5 rounded-fld bg-emerald-600 text-white font-bold text-[13px] flex items-center gap-2 disabled:opacity-60"><i data-lucide="banknote" class="w-4 h-4"></i> Tandai cair</button></template>
-              <template x-if="canReturn"><button @click="ret()" :disabled="busy" class="px-4 py-2.5 rounded-fld border border-line dark:border-white/15 font-bold text-[13px] flex items-center gap-2 disabled:opacity-60"><i data-lucide="corner-up-left" class="w-4 h-4"></i> Kembalikan</button></template>
-              <template x-if="canReject"><button @click="reject()" :disabled="busy" class="px-4 py-2.5 rounded-fld border border-rose-200 text-rose-600 font-bold text-[13px] flex items-center gap-2 disabled:opacity-60"><i data-lucide="x" class="w-4 h-4"></i> Tolak</button></template>
+              <template x-if="canReturn"><button @click="askReason('/return','Kembalikan ke pengaju','Kembalikan')" :disabled="busy" class="px-4 py-2.5 rounded-fld border border-line dark:border-white/15 font-bold text-[13px] flex items-center gap-2 disabled:opacity-60"><i data-lucide="corner-up-left" class="w-4 h-4"></i> Kembalikan</button></template>
+              <template x-if="canReject"><button @click="askReason('/reject','Tolak pengajuan','Tolak', true)" :disabled="busy" class="px-4 py-2.5 rounded-fld border border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 font-bold text-[13px] flex items-center gap-2 disabled:opacity-60"><i data-lucide="x" class="w-4 h-4"></i> Tolak</button></template>
               <template x-if="hasDoc"><button @click="download()" class="ml-auto px-4 py-2.5 rounded-fld border border-line dark:border-white/15 font-bold text-[13px] flex items-center gap-2"><i data-lucide="file-down" class="w-4 h-4"></i> Download .docx</button></template>
+            </div>
+          </div>
+
+          <!-- modal alasan: tolak / kembalikan -->
+          <div x-show="reason.open" x-transition.opacity class="fixed inset-0 z-50 bg-ink/50 backdrop-blur-sm flex items-start sm:items-center justify-center p-3 sm:p-6 overflow-y-auto" style="display:none" @click.self="reason.open=false" @keydown.escape.window="reason.open=false">
+            <div class="bg-white dark:bg-[#0c1022] rounded-card shadow-paper w-full max-w-[420px] my-auto p-5">
+              <div class="flex items-center justify-between mb-4"><span class="text-[15px] font-bold text-ink dark:text-white" x-text="reason.title"></span><button @click="reason.open=false" class="p-1.5 rounded-fld text-slate-400 hover:bg-line/60 dark:hover:bg-white/5"><i data-lucide="x" class="w-4 h-4"></i></button></div>
+              <textarea x-model="reason.text" rows="3" class="fld mb-4" placeholder="Tulis alasan (wajib)…" @keydown.escape.stop="reason.open=false"></textarea>
+              <div class="flex gap-2">
+                <button @click="submitReason()" :disabled="busy" class="flex-1 py-2.5 rounded-fld text-white font-bold text-[13px] disabled:opacity-60" :class="reason.danger ? 'bg-rose-500 hover:bg-rose-600' : 'btn-primary'" x-text="reason.confirmLabel"></button>
+                <button @click="reason.open=false" class="py-2.5 px-4 rounded-fld border border-line dark:border-white/15 text-slate-600 dark:text-slate-200 font-bold text-[13px]">Batal</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- daftar item dipantau (lintas pengajuan) -->
+          <div x-show="monitoredListOpen" x-transition.opacity class="fixed inset-0 z-50 bg-ink/50 backdrop-blur-sm flex items-start sm:items-center justify-center p-3 sm:p-6 overflow-y-auto" style="display:none" @click.self="monitoredListOpen=false" @keydown.escape.window="monitoredListOpen=false">
+            <div class="bg-white dark:bg-[#0c1022] rounded-card shadow-paper w-full max-w-[460px] my-auto p-5">
+              <div class="flex items-center justify-between mb-3"><span class="text-[15px] font-bold text-ink dark:text-white flex items-center gap-2"><i data-lucide="eye" class="w-4 h-4 text-accent-600 dark:text-accent-400"></i> Item dipantau</span><button @click="monitoredListOpen=false" class="p-1.5 rounded-fld text-slate-400 hover:bg-line/60 dark:hover:bg-white/5"><i data-lucide="x" class="w-4 h-4"></i></button></div>
+              <div class="space-y-1.5 max-h-[60vh] overflow-y-auto">
+                <template x-if="!monitoredAll.length"><div class="text-[13px] text-slate-400 px-1 py-4 text-center">Belum ada item yang dipantau.</div></template>
+                <template x-for="m in monitoredAll" :key="m.itemId">
+                  <button @click="goto(m.pengajuanId)" class="w-full text-left px-3 py-2.5 rounded-fld hover:bg-line/60 dark:hover:bg-white/5 flex items-center gap-2.5">
+                    <i data-lucide="eye" class="w-3.5 h-3.5 text-accent-500 shrink-0"></i>
+                    <span class="flex-1 min-w-0">
+                      <span class="block text-[13px] font-semibold text-ink dark:text-white truncate" x-text="m.item"></span>
+                      <span class="block text-[11px] text-slate-400 truncate" x-text="m.nbr + ' · ' + m.tanggal + ' · ' + m.namaPengajuan"></span>
+                    </span>
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-slate-300 shrink-0"></i>
+                  </button>
+                </template>
+              </div>
             </div>
           </div>
         </div>
@@ -449,34 +541,168 @@
     <section x-data="monitoredView()" x-init="init()" class="rise max-w-[680px]">
       <div class="flex items-center gap-3 mb-5">
         <a href="#/" class="p-2 rounded-fld text-slate-400 hover:bg-line/60 dark:hover:bg-white/5"><i data-lucide="arrow-left" class="w-4 h-4"></i></a>
-        <div><h1 class="text-[22px] font-black tracking-tight text-ink dark:text-white">Item dimonitor</h1><p class="text-[13px] text-slate-500">Deteksi pengajuan ganda / terlalu cepat</p></div>
-        <template x-if="canManage"><button @click="showAdd=true" class="btn-primary ml-auto px-3.5 py-2.5 rounded-fld text-[13px] font-bold flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Tambah</button></template>
+        <div><h1 class="text-[22px] font-black tracking-tight text-ink dark:text-white">Item dipantau</h1><p class="text-[13px] text-slate-500">Item yang ditandai verifikator dari pengajuan</p></div>
       </div>
       <template x-if="loading"><div class="text-slate-400 py-8 text-center text-[13px]">Memuat…</div></template>
-      <template x-if="!loading && rows.length===0"><div class="card p-8 text-center text-slate-400 text-[13px]">Belum ada item dimonitor.</div></template>
+      <template x-if="!loading && rows.length===0"><div class="card p-8 text-center text-slate-400 text-[13px]">Belum ada item dipantau.<br/>Tandai dari detail pengajuan (icon mata di tiap item).</div></template>
       <div class="space-y-2.5">
-        <template x-for="r in rows" :key="r.id">
-          <div class="card p-4 flex items-center gap-3">
-            <div class="w-10 h-10 rounded-fld bg-accent-500/10 grid place-items-center text-accent-600 dark:text-accent-400 shrink-0"><i data-lucide="radar" class="w-5 h-5"></i></div>
+        <template x-for="r in rows" :key="r.itemId">
+          <button @click="open(r.pengajuanId)" class="w-full text-left card p-4 flex items-center gap-3 hover:shadow-paper transition">
+            <div class="w-10 h-10 rounded-fld bg-accent-500/10 grid place-items-center text-accent-600 dark:text-accent-400 shrink-0"><i data-lucide="eye" class="w-5 h-5"></i></div>
             <div class="flex-1 min-w-0">
-              <div class="font-bold text-[14px] text-ink dark:text-white truncate" x-text="r.name"></div>
-              <div class="text-[12px] text-slate-500 truncate" x-text="catLabel(r.category)+(r.expectedIntervalDays?(' · tiap ~'+r.expectedIntervalDays+' hari'):'')"></div>
+              <div class="font-bold text-[14px] text-ink dark:text-white truncate" x-text="r.item"></div>
+              <div class="text-[12px] text-slate-500 truncate"><span class="font-mono text-brand-500 dark:text-accent-400" x-text="r.nbr"></span> · <span x-text="r.namaPengajuan"></span></div>
             </div>
+            <span class="text-[11px] text-slate-400 shrink-0 hidden sm:flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3"></i> <span x-text="r.tanggal"></span></span>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-slate-300 shrink-0"></i>
+          </button>
+        </template>
+      </div>
+    </section>
+  </template>
+
+  <!-- ============ PENGGUNA ============ -->
+  <template x-if="$store.router.view==='users'">
+    <section x-data="usersView()" x-init="init()" class="rise max-w-[760px]">
+      <div class="flex items-center gap-3 mb-5">
+        <a href="#/" class="p-2 rounded-fld text-slate-400 hover:bg-line/60 dark:hover:bg-white/5"><i data-lucide="arrow-left" class="w-4 h-4"></i></a>
+        <div><h1 class="text-[22px] font-black tracking-tight text-ink dark:text-white">Kelola pengguna</h1><p class="text-[13px] text-slate-500">User &amp; role akses</p></div>
+        <button @click="openAdd()" class="btn-primary ml-auto px-3.5 py-2.5 rounded-fld text-[13px] font-bold flex items-center gap-2"><i data-lucide="user-plus" class="w-4 h-4"></i> Tambah</button>
+      </div>
+      <template x-if="loading"><div class="text-slate-400 py-8 text-center text-[13px]">Memuat…</div></template>
+      <div class="space-y-2.5">
+        <template x-for="u in rows" :key="u.id">
+          <div class="card p-4 flex items-center gap-3">
+            <span class="w-9 h-9 rounded-full bg-brand-500 grid place-items-center text-[12px] font-bold text-white shrink-0" x-text="(u.nama||'?').split(' ').map(w=>w[0]).join('').slice(0,2)"></span>
+            <div class="flex-1 min-w-0">
+              <div class="font-bold text-[14px] text-ink dark:text-white truncate" x-text="u.nama"></div>
+              <div class="text-[12px] text-slate-500 truncate" x-text="u.email + (u.department ? ' · '+u.department : '')"></div>
+            </div>
+            <div class="hidden sm:flex flex-wrap gap-1 justify-end max-w-[220px]">
+              <template x-for="r in (u.roles||[])" :key="r"><span class="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-chip bg-accent-500/10 text-accent-700 dark:text-accent-400" x-text="r"></span></template>
+            </div>
+            <button @click="openEdit(u)" class="shrink-0 p-2 rounded-fld text-slate-400 hover:text-ink hover:bg-line/60 dark:hover:bg-white/5"><i data-lucide="pencil" class="w-4 h-4"></i></button>
           </div>
         </template>
       </div>
-      <div x-show="showAdd" x-transition.opacity class="fixed inset-0 z-50 bg-ink/50 backdrop-blur-sm flex items-start sm:items-center justify-center p-3 sm:p-6 overflow-y-auto" style="display:none" @click.self="showAdd=false" @keydown.escape.window="showAdd=false">
-        <div class="bg-white dark:bg-[#0c1022] rounded-card shadow-paper w-full max-w-[420px] my-auto p-5">
-          <div class="flex items-center justify-between mb-4"><span class="text-[15px] font-bold text-ink dark:text-white">Tambah item monitor</span><button @click="showAdd=false" class="p-1.5 rounded-fld text-slate-400 hover:bg-line/60 dark:hover:bg-white/5"><i data-lucide="x" class="w-4 h-4"></i></button></div>
+      <!-- modal form -->
+      <div x-show="showForm" x-transition.opacity class="fixed inset-0 z-50 bg-ink/50 backdrop-blur-sm flex items-start sm:items-center justify-center p-3 sm:p-6 overflow-y-auto" style="display:none" @click.self="showForm=false" @keydown.escape.window="showForm=false">
+        <div class="bg-white dark:bg-[#0c1022] rounded-card shadow-paper w-full max-w-[440px] my-auto p-5">
+          <div class="flex items-center justify-between mb-4"><span class="text-[15px] font-bold text-ink dark:text-white" x-text="editing ? 'Edit pengguna' : 'Tambah pengguna'"></span><button @click="showForm=false" class="p-1.5 rounded-fld text-slate-400 hover:bg-line/60 dark:hover:bg-white/5"><i data-lucide="x" class="w-4 h-4"></i></button></div>
           <div class="space-y-3">
-            <label class="block"><span class="lbl">Nama item</span><input x-model="f.name" class="fld" placeholder="Toyota Avanza B 1234 XYZ" /></label>
-            <label class="block"><span class="lbl">Kategori</span><select x-model="f.category" class="fld"><option value="vehicle">Kendaraan</option><option value="equipment">Alat</option><option value="software_license">Lisensi software</option><option value="consumable">Consumable</option><option value="other">Lainnya</option></select></label>
-            <label class="block"><span class="lbl">Interval wajar (hari)</span><input x-model.number="f.expectedIntervalDays" type="number" min="0" class="fld" placeholder="90" /></label>
-            <label class="block"><span class="lbl">Departemen pemilik</span><input x-model="f.ownerDepartment" class="fld" placeholder="PRO / ADM …" /></label>
+            <label class="block"><span class="lbl">Nama</span><input x-model="f.nama" class="fld" placeholder="Nama lengkap" /></label>
+            <label class="block"><span class="lbl">Email</span><input x-model="f.email" type="email" class="fld" placeholder="nama@kartabhumi.id" :disabled="editing" /></label>
+            <label class="block"><span class="lbl" x-text="editing ? 'Password (kosongin kalau gak ganti)' : 'Password'"></span><input x-model="f.password" type="password" class="fld" placeholder="••••••••" /></label>
+            <label class="block"><span class="lbl">Departemen</span><input x-model="f.department" class="fld" placeholder="ADM / PRO / BOD …" /></label>
+            <div><span class="lbl">Role</span>
+              <div class="flex flex-wrap gap-2">
+                <template x-for="r in ROLES" :key="r.key">
+                  <button type="button" @click="toggleRole(r.key)" :class="f.roles.includes(r.key) ? 'bg-ink text-white border-ink' : 'border-line dark:border-white/15 text-slate-500'" class="px-3 py-1.5 rounded-fld border text-[12px] font-semibold" x-text="r.label"></button>
+                </template>
+              </div>
+            </div>
           </div>
-          <button @click="add()" :disabled="saving" class="btn-primary w-full mt-4 py-2.5 rounded-fld text-[13px] font-bold disabled:opacity-60">Simpan</button>
+          <button @click="save()" :disabled="saving" class="btn-primary w-full mt-4 py-2.5 rounded-fld text-[13px] font-bold disabled:opacity-60">Simpan</button>
         </div>
       </div>
+    </section>
+  </template>
+
+  <!-- ============ DASHBOARD ============ -->
+  <template x-if="$store.router.view==='dashboard'">
+    <section x-data="dashboardView()" x-init="init()" class="rise">
+      <div class="flex items-center gap-3 mb-5">
+        <a href="#/" class="p-2 rounded-fld text-slate-400 hover:bg-line/60 dark:hover:bg-white/5"><i data-lucide="arrow-left" class="w-4 h-4"></i></a>
+        <div><h1 class="text-[22px] font-black tracking-tight text-ink dark:text-white">Dashboard</h1><p class="text-[13px] text-slate-500">Visualisasi pengajuan</p></div>
+      </div>
+
+      <!-- filter -->
+      <div class="card p-4 mb-5 grid grid-cols-2 md:grid-cols-6 gap-3 items-end">
+        <label class="block"><span class="lbl">Dari</span><input type="date" x-model="filter.from" class="fld-sm" /></label>
+        <label class="block"><span class="lbl">Sampai</span><input type="date" x-model="filter.to" class="fld-sm" /></label>
+        <label class="block"><span class="lbl">Kategori</span><select x-model="filter.kategori" class="fld-sm"><option value="">Semua</option><option value="reimbursement">Reimbursement</option><option value="pengajuan_baru">Pengajuan Baru</option></select></label>
+        <label class="block"><span class="lbl">Status</span><select x-model="filter.state" class="fld-sm"><option value="">Semua</option><option value="submitted">Menunggu verif</option><option value="verified">Terverifikasi</option><option value="approved">Disetujui</option><option value="rejected">Ditolak</option><option value="paid">Cair</option></select></label>
+        <label class="block"><span class="lbl">Proyek</span><select x-model="filter.kodeProyek" class="fld-sm"><option value="">Semua</option><template x-for="p in projects" :key="p.kode"><option :value="p.kode" x-text="p.kode"></option></template></select></label>
+        <button @click="apply()" class="btn-primary py-2 rounded-fld text-[13px] font-bold">Terapkan</button>
+      </div>
+
+      <!-- KPI -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+        <div class="card p-4"><div class="lbl">Total pengajuan</div><div class="text-[22px] font-black text-ink dark:text-white num" x-text="stats ? stats.totalCount : '—'"></div></div>
+        <div class="card p-4"><div class="lbl">Total nominal</div><div class="text-[20px] font-black text-ink dark:text-white num" x-text="stats ? rp(stats.totalAmount) : '—'"></div></div>
+        <div class="card p-4"><div class="lbl">Nominal cair</div><div class="text-[20px] font-black text-emerald-600 dark:text-emerald-400 num" x-text="stats ? rp(stats.paidAmount) : '—'"></div></div>
+        <div class="card p-4"><div class="lbl">Menunggu verif</div><div class="text-[22px] font-black text-amber-600 dark:text-amber-400 num" x-text="stats ? stats.pendingCount : '—'"></div></div>
+      </div>
+
+      <!-- charts -->
+      <div class="grid lg:grid-cols-3 gap-4">
+        <div class="card p-5 lg:col-span-2"><div class="text-[13px] font-bold text-ink dark:text-white mb-3">Nominal per bulan</div><div class="h-[260px]"><canvas id="ch-month"></canvas></div></div>
+        <div class="card p-5"><div class="text-[13px] font-bold text-ink dark:text-white mb-3">Per status</div><div class="h-[260px]"><canvas id="ch-state"></canvas></div></div>
+        <div class="card p-5 lg:col-span-3"><div class="text-[13px] font-bold text-ink dark:text-white mb-3">Per proyek</div><div class="h-[280px]"><canvas id="ch-proyek"></canvas></div></div>
+      </div>
+
+      <!-- tabel: per pengaju -->
+      <div class="card overflow-hidden mt-4">
+        <div class="px-5 pt-5 pb-3 text-[13px] font-bold text-ink dark:text-white">Per pengaju</div>
+        <div class="max-h-[320px] overflow-y-auto">
+          <table class="w-full text-[13px]">
+            <thead class="text-[10px] uppercase tracking-wide text-slate-400 border-b border-line dark:border-white/10 sticky top-0 bg-white dark:bg-[#0c1022]"><tr><th class="text-left font-semibold px-5 py-2.5">Pengaju</th><th class="text-right font-semibold px-3 py-2.5">Jml</th><th class="text-right font-semibold px-5 py-2.5">Total</th></tr></thead>
+            <tbody>
+              <template x-if="stats && stats.byPengaju && stats.byPengaju.length===0"><tr><td colspan="3" class="px-5 py-6 text-center text-slate-400">Belum ada data.</td></tr></template>
+              <template x-for="(r,i) in (stats ? stats.byPengaju : [])" :key="i">
+                <tr class="border-b border-line/60 dark:border-white/[.05]">
+                  <td class="px-5 py-2.5 font-medium text-ink dark:text-white flex items-center gap-2"><span class="w-6 h-6 rounded-full bg-brand-500 grid place-items-center text-[9px] font-bold text-white shrink-0" x-text="(r.pengaju||'?').split(' ').map(w=>w[0]).join('').slice(0,2)"></span> <span x-text="r.pengaju"></span></td>
+                  <td class="px-3 py-2.5 text-right num text-slate-500" x-text="r.count"></td>
+                  <td class="px-5 py-2.5 text-right num font-semibold" x-text="rp(r.amount)"></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- tabel: pengeluaran per item (agregat) -->
+      <div class="card overflow-hidden mt-4">
+        <div class="px-5 pt-5 pb-3 text-[13px] font-bold text-ink dark:text-white">Pengeluaran per item</div>
+        <div class="max-h-[420px] overflow-y-auto">
+          <table class="w-full text-[13px]">
+            <thead class="text-[10px] uppercase tracking-wide text-slate-400 border-b border-line dark:border-white/10 sticky top-0 bg-white dark:bg-[#0c1022]"><tr><th class="text-left font-semibold px-5 py-2.5">Item</th><th class="text-right font-semibold px-3 py-2.5">Jml</th><th class="text-right font-semibold px-3 py-2.5">Qty</th><th class="text-right font-semibold px-5 py-2.5">Total</th></tr></thead>
+            <tbody>
+              <template x-if="stats && stats.byItem && stats.byItem.length===0"><tr><td colspan="4" class="px-5 py-6 text-center text-slate-400">Belum ada data.</td></tr></template>
+              <template x-for="(r,i) in (stats ? stats.byItem : [])" :key="i">
+                <tr class="border-b border-line/60 dark:border-white/[.05]">
+                  <td class="px-5 py-2.5 font-medium text-ink dark:text-white" x-text="r.item"></td>
+                  <td class="px-3 py-2.5 text-right num text-slate-500" x-text="r.count"></td>
+                  <td class="px-3 py-2.5 text-right num text-slate-500" x-text="r.qty"></td>
+                  <td class="px-5 py-2.5 text-right num font-semibold" x-text="rp(r.amount)"></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- tabel: rincian item (detail) -->
+      <div class="card overflow-hidden mt-4">
+        <div class="px-5 pt-5 pb-3 text-[13px] font-bold text-ink dark:text-white">Rincian item <span class="text-slate-400 font-normal" x-text="stats && stats.items ? '('+stats.items.length+')' : ''"></span></div>
+        <div class="max-h-[480px] overflow-y-auto">
+          <table class="w-full text-[13px]">
+            <thead class="text-[10px] uppercase tracking-wide text-slate-400 border-b border-line dark:border-white/10 sticky top-0 bg-white dark:bg-[#0c1022]"><tr><th class="text-left font-semibold px-5 py-2.5">Item</th><th class="text-right font-semibold px-3 py-2.5">Qty</th><th class="text-right font-semibold px-3 py-2.5">Subtotal</th><th class="text-left font-semibold px-3 py-2.5">NBR</th><th class="text-left font-semibold px-5 py-2.5">Status</th></tr></thead>
+            <tbody>
+              <template x-for="(r,i) in (stats ? stats.items : [])" :key="i">
+                <tr class="border-b border-line/60 dark:border-white/[.05]">
+                  <td class="px-5 py-2.5"><div class="font-medium text-ink dark:text-white" x-text="r.item"></div><div class="text-[11px] text-slate-400 truncate max-w-[220px]" x-text="r.namaPengajuan + ' · ' + r.pengaju"></div></td>
+                  <td class="px-3 py-2.5 text-right num text-slate-500"><span x-text="r.qty"></span> <span class="text-slate-400" x-text="r.satuan||''"></span></td>
+                  <td class="px-3 py-2.5 text-right num font-semibold" x-text="rp(r.subtotal)"></td>
+                  <td class="px-3 py-2.5 font-mono text-[11px] text-brand-500 dark:text-accent-400" x-text="r.nbr"></td>
+                  <td class="px-5 py-2.5"><span class="px-2 py-0.5 rounded-chip text-[10px] font-semibold" :class="stateCls(r.state)" x-text="stateLabel(r.state)"></span></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <template x-if="loading"><div class="text-slate-400 py-6 text-center text-[13px]">Memuat…</div></template>
     </section>
   </template>
 
@@ -519,6 +745,7 @@
 </div>
 
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script type="module" src="main.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 <script>window.addEventListener('load',()=>window.lucide?.createIcons());document.addEventListener('alpine:initialized',()=>setTimeout(()=>window.lucide?.createIcons(),50));</script>
