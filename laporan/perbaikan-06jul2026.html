@@ -3,82 +3,123 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Laporan Perbaikan — FINA go (6 Juli 2026)</title>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600&display=swap" rel="stylesheet" />
-<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap" rel="stylesheet" />
+<title>Laporan Perbaikan Aplikasi FINA go — 6 Juli 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&display=swap" rel="stylesheet" />
 <style>
-  :root{--navy:#1e2a8e;--navy2:#15183a;--teal:#0d9488;--teal2:#14b8a6;--ink:#181b2e;--muted:#6b7090;--line:#e3e6f0;--rose:#e11d48;--amber:#d97706;--emerald:#059669}
+  :root{--ink:#1a1c22;--sub:#4a4d57;--rule:#232634;--faint:#8b8f9c;--line:#d7d9e0}
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Satoshi',system-ui,sans-serif;color:var(--ink);background:#eef0f6;line-height:1.55;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .page{width:210mm;min-height:297mm;background:#fff;margin:10mm auto;padding:18mm 16mm;position:relative;box-shadow:0 4px 24px rgba(20,24,55,.12)}
-  .wordmark{font-size:24px;font-weight:900;color:var(--navy);letter-spacing:-.02em}.wordmark span{color:var(--teal);font-weight:500}
-  .label{font-size:8.5px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}
-  .head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--line);padding-bottom:14px}
-  .meta{text-align:right;font-size:10px;color:var(--muted)}.meta b{color:var(--ink)}
-  .pill{display:inline-block;font-size:9px;font-weight:700;padding:2px 9px;border-radius:99px}.pill.green{background:#e7f7f1;color:var(--emerald)}
-  h1{font-size:27px;font-weight:900;color:var(--navy2);letter-spacing:-.02em;margin-top:16px}
-  h2{font-size:16px;font-weight:800;color:var(--navy);margin:22px 0 4px;display:flex;align-items:center;gap:8px}
-  .num{width:22px;height:22px;border-radius:6px;background:var(--navy);color:#fff;display:inline-grid;place-items:center;font-size:12px;font-weight:800}
-  p{font-size:11.5px;margin:6px 0;color:#2c3050}.lede{font-size:12.5px;color:#3a3f63}
-  .why{background:#fbfbfe;border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:6px;padding:9px 12px;font-size:11px;color:#3a3f63;margin:8px 0}
-  .ba{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:9px 0}
-  .ba .col{padding:12px 15px}.ba .before{background:#fef5f5;border-right:1px solid var(--line)}.ba .after{background:#f0f9f6}
-  .ba h4{font-size:11px;font-weight:800;margin-bottom:6px}.before h4{color:var(--rose)}.after h4{color:var(--teal)}
-  ul{list-style:none;margin-top:4px}li{font-size:11px;padding:3px 0 3px 16px;position:relative;color:#2c3050;line-height:1.4}
-  li::before{content:"";position:absolute;left:2px;top:8px;width:5px;height:5px;border-radius:2px;background:var(--teal2)}
-  .before li::before{background:#f1a6b2}
-  .foot{position:absolute;bottom:12mm;left:16mm;right:16mm;display:flex;justify-content:space-between;font-size:8.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:6px}
-  .toolbar{position:fixed;top:14px;right:14px}.toolbar button{font-family:inherit;font-weight:700;font-size:12px;background:var(--navy);color:#fff;border:0;border-radius:8px;padding:9px 16px;cursor:pointer}
-  @media print{.toolbar{display:none}body{background:#fff}.page{margin:0;box-shadow:none;padding:14mm 15mm}@page{size:A4;margin:0}}
+  body{font-family:'Newsreader',Georgia,'Times New Roman',serif;color:var(--ink);background:#e9eaee;line-height:1.62;font-size:12.2pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .doc{max-width:210mm;margin:12mm auto;background:#fff;padding:24mm 22mm;box-shadow:0 3px 22px rgba(0,0,0,.12)}
+  /* kop surat */
+  .kop{text-align:center;border-bottom:3px double var(--rule);padding-bottom:12px;margin-bottom:6px}
+  .kop .co{font-size:15.5pt;font-weight:700;letter-spacing:.02em;color:var(--rule)}
+  .kop .co small{font-weight:500;color:var(--faint)}
+  .kop .sub{font-size:9.5pt;color:var(--sub);margin-top:2px;font-style:italic}
+  .title{text-align:center;margin:22px 0 4px}
+  .title h1{font-size:15pt;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+  .title .u{width:64px;height:2px;background:var(--rule);margin:8px auto 0}
+  /* meta perihal */
+  .meta{margin:16px 0 6px;font-size:11pt}
+  .meta table{border-collapse:collapse}
+  .meta td{padding:1px 0;vertical-align:top}
+  .meta td.k{width:96px;color:var(--sub)}.meta td.s{width:12px;color:var(--sub)}
+  h2{font-size:12.4pt;font-weight:700;margin:20px 0 4px}
+  h3{font-size:11.6pt;font-weight:600;margin:14px 0 3px}
+  p{margin:6px 0;text-align:justify}
+  .lead{margin-top:4px}
+  blockquote{margin:8px 0 8px 4px;padding:6px 0 6px 16px;border-left:3px solid var(--line);color:#3a3d47;font-style:italic;font-size:11.4pt}
+  blockquote .src{display:block;font-style:normal;font-size:8.8pt;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin-top:5px}
+  ol{margin:6px 0 6px 22px}ol li{margin:3px 0;padding-left:3px;text-align:justify}
+  figure{margin:14px 0 16px;text-align:center;break-inside:avoid;page-break-inside:avoid}
+  figure img{max-width:100%;border:1px solid var(--line);border-radius:2px}
+  figcaption{font-size:9.8pt;font-style:italic;color:var(--sub);margin-top:6px}
+  figcaption b{font-style:normal;font-weight:600;color:var(--ink)}
+  .close{margin-top:26px;display:flex;justify-content:flex-end}
+  .close .blk{text-align:center;font-size:11.2pt;min-width:56mm}
+  .close .sp{height:22mm}
+  .close .nm{font-weight:600;border-top:1px solid var(--ink);padding-top:3px;display:inline-block;min-width:52mm}
+  .toolbar{position:fixed;top:14px;right:14px}
+  .toolbar button{font-family:system-ui,sans-serif;font-weight:600;font-size:12px;background:var(--rule);color:#fff;border:0;border-radius:6px;padding:9px 15px;cursor:pointer}
+  @media print{.toolbar{display:none}body{background:#fff;font-size:11.5pt}.doc{max-width:none;margin:0;padding:0;box-shadow:none}@page{size:A4;margin:22mm 20mm}}
 </style>
 </head>
 <body>
 <div class="toolbar"><button onclick="window.print()">⤓ Cetak / Simpan PDF</button></div>
-<section class="page">
-  <div class="head">
-    <div><div class="wordmark">FINA <span>go</span></div><div class="label" style="margin-top:3px">PT. Karta Bhumi Nusantara</div></div>
-    <div class="meta"><div class="label">Laporan Perbaikan</div><div style="margin-top:4px"><b>Tanggal:</b> 6 Juli 2026</div><div><b>Status:</b> <span class="pill green">SUDAH LIVE</span></div></div>
+<div class="doc">
+
+  <div class="kop">
+    <div class="co">PT. KARTA BHUMI NUSANTARA</div>
+    <div class="sub">Aplikasi Pengajuan Reimbursement &amp; Purchase Request — “FINA go”</div>
   </div>
 
-  <h1>Perbaikan Berdasarkan Masukan Approver</h1>
-  <p class="lede" style="margin-top:6px">Dua penyempurnaan yang diminta saat pemakaian oleh <b>approver (Wahyu&nbsp;Banitara)</b> — sudah dikerjakan &amp; diterbitkan ke produksi hari ini.</p>
-
-  <h2><span class="num">1</span> Keputusan bisa direvisi (buka kembali)</h2>
-  <div class="why"><b>Kenapa diminta:</b> "Kadang gambar nota tidak muncul, jadi keburu <i>tolak</i> — padahal setelah dicek ternyata mau di-<i>acc</i>." Approver butuh cara mengubah keputusan yang sudah terlanjur diambil.</div>
-  <div class="ba">
-    <div class="col before"><h4>✕ Sebelum</h4><ul>
-      <li>Keputusan <b>Tolak</b> bersifat final — tidak bisa diubah</li>
-      <li>Kalau salah tolak, pengajuan harus dibuat ulang dari awal</li>
-      <li>Gambar bukti kadang gagal muat tanpa cara memuat ulang</li>
-    </ul></div>
-    <div class="col after"><h4>✓ Sesudah</h4><ul>
-      <li>Tombol <b>"Buka kembali"</b> pada dokumen yang Ditolak/Dikembalikan → keputusan bisa direvisi</li>
-      <li>Dokumen otomatis kembali ke tahap sebelumnya (mis. dari <i>Ditolak</i> → <i>Terverifikasi</i>) sehingga bisa langsung di-<b>Setujui</b></li>
-      <li>Gambar bukti kini <b>dicoba muat 2×</b>; jika masih gagal ada tombol <b>"Muat ulang"</b></li>
-    </ul></div>
-  </div>
-  <p style="font-size:10.5px;color:var(--muted)">Hak akses: hanya Verifikator / Approver / Admin yang dapat membuka kembali keputusan.</p>
-
-  <h2><span class="num">2</span> Kolom &amp; filter tanggal di daftar pengajuan</h2>
-  <div class="why"><b>Kenapa diminta:</b> "Perlu ada kolom tanggal supaya bisa memilih / menyaring pengajuan berdasarkan tanggal."</div>
-  <div class="ba">
-    <div class="col before"><h4>✕ Sebelum</h4><ul>
-      <li>Daftar pengajuan tidak menampilkan tanggal</li>
-      <li>Hanya bisa disaring per status &amp; kategori</li>
-      <li>Sulit meninjau pengajuan pada periode tertentu</li>
-    </ul></div>
-    <div class="col after"><h4>✓ Sesudah</h4><ul>
-      <li>Ditambah kolom <b>"Tanggal"</b> pada daftar pengajuan</li>
-      <li>Ditambah <b>filter rentang tanggal</b> (dari – sampai)</li>
-      <li>Bisa langsung menyaring pengajuan sesuai periode</li>
-    </ul></div>
+  <div class="title">
+    <h1>Laporan Perbaikan Aplikasi</h1>
+    <div class="u"></div>
   </div>
 
-  <h2><span class="num">✓</span> Status</h2>
-  <p>Kedua perbaikan telah <b>diuji</b> (alur tolak → buka kembali → setujui berhasil) dan <b>diterbitkan ke produksi</b>. Dapat langsung dipakai — cukup muat ulang halaman aplikasi.</p>
+  <div class="meta">
+    <table>
+      <tr><td class="k">Perihal</td><td class="s">:</td><td>Tindak lanjut catatan/masukan pengguna atas aplikasi FINA go</td></tr>
+      <tr><td class="k">Tanggal</td><td class="s">:</td><td>6 Juli 2026</td></tr>
+      <tr><td class="k">Status</td><td class="s">:</td><td>Telah diterbitkan ke produksi (live)</td></tr>
+      <tr><td class="k">Disusun oleh</td><td class="s">:</td><td>Tim Pengembang FINA go</td></tr>
+    </table>
+  </div>
 
-  <p style="margin-top:16px;font-size:10px;color:var(--muted)">Disusun otomatis dari progres pengembangan FINA go · PT. Karta Bhumi Nusantara · 6 Juli 2026</p>
-  <div class="foot"><span>FINA go — Laporan Perbaikan (6 Juli 2026)</span><span>Hal. 1 / 1</span></div>
-</section>
+  <h2>I.&nbsp;&nbsp;Pendahuluan</h2>
+  <p class="lead">Laporan ini disusun untuk menindaklanjuti catatan yang disampaikan oleh pengguna aplikasi FINA go pada saat pemakaian. Terdapat dua masukan yang telah kami kerjakan. Pada tiap butir, kami cantumkan kutipan catatan yang bersangkutan, uraian penyesuaian yang dibuat, alur pemakaiannya, serta tangkapan layar sebagai bukti pelaksanaan.</p>
+
+  <h2>II.&nbsp;&nbsp;Perbaikan yang Dilakukan</h2>
+
+  <h3>2.1&nbsp;&nbsp;Revisi Keputusan (fitur “Buka Kembali”)</h3>
+  <blockquote>“Di bagianku perlu ada revisi keputusan — misal aku tolak, ternyata berubah pikiran jadi di-<i>acc</i>, itu biar masih bisa di-edit. Soalnya gambar nota-nya ini kadang-kadang tidak keluar.”
+    <span class="src">Catatan pengguna — Approver</span>
+  </blockquote>
+  <p>Menindaklanjuti catatan tersebut, kami membuat tombol <b>“Buka Kembali”</b> pada dokumen yang telah ditolak atau dikembalikan, sehingga keputusan tidak lagi bersifat final dan dapat direvisi. Sehubungan dengan kendala gambar bukti yang terkadang tidak tampil, kami juga menyesuaikan agar gambar dimuat ulang otomatis hingga dua kali, dan apabila masih gagal disediakan tombol <b>“Muat Ulang”</b> pada masing-masing gambar.</p>
+  <p style="margin-bottom:2px"><b>Alur pemakaian:</b></p>
+  <ol>
+    <li>Approver membuka dokumen pengajuan; apabila bukti belum tampil, tekan <b>“Muat Ulang”</b> pada gambar terkait.</li>
+    <li>Apabila terlanjur menekan <b>Tolak</b> namun berubah keputusan, tekan tombol <b>“Buka Kembali”</b>.</li>
+    <li>Dokumen otomatis dikembalikan ke tahap sebelumnya (misalnya dari status <i>Ditolak</i> menjadi <i>Terverifikasi</i>).</li>
+    <li>Approver cukup menekan <b>Setujui</b>, sehingga keputusan berubah menjadi disetujui.</li>
+  </ol>
+  <p style="font-size:10pt;color:var(--sub)">Catatan: pembukaan kembali keputusan hanya dapat dilakukan oleh Verifikator, Approver, atau Admin.</p>
+  <figure>
+    <img src="img/perbaikan-buka-kembali.png" alt="Tombol Buka Kembali pada dokumen yang ditolak" />
+    <figcaption><b>Gambar 1.</b> Tombol “Buka Kembali” pada dokumen berstatus <i>Ditolak</i> — keputusan dapat direvisi kembali.</figcaption>
+  </figure>
+
+  <h3>2.2&nbsp;&nbsp;Penambahan Kolom dan Penyaringan Tanggal</h3>
+  <blockquote>“Di sini perlu ada kolom tanggal dibuat, sehingga bisa dipilih/disaring berdasarkan tanggal.”
+    <span class="src">Catatan pengguna — Approver</span>
+  </blockquote>
+  <p>Menindaklanjuti catatan tersebut, kami menambahkan kolom <b>“Tanggal”</b> pada daftar pengajuan, sekaligus <b>penyaring rentang tanggal (dari–sampai)</b> pada bagian atas daftar. Dengan demikian, pengajuan dapat ditinjau dan disaring berdasarkan periode secara cepat, dan dapat digabungkan dengan penyaring status maupun kategori yang telah ada.</p>
+  <p style="margin-bottom:2px"><b>Alur pemakaian:</b></p>
+  <ol>
+    <li>Buka menu <b>Pengajuan</b>; kolom <b>Tanggal</b> kini tampil pada setiap baris.</li>
+    <li>Isikan tanggal <b>“dari”</b> dan <b>“sampai”</b> pada penyaring di atas daftar.</li>
+    <li>Daftar akan langsung menyaring pengajuan sesuai periode yang dipilih.</li>
+  </ol>
+  <figure>
+    <img src="img/perbaikan-filter-tanggal.png" alt="Kolom Tanggal dan penyaring rentang tanggal pada daftar pengajuan" />
+    <figcaption><b>Gambar 2.</b> Kolom “Tanggal” dan penyaring rentang tanggal pada daftar pengajuan.</figcaption>
+  </figure>
+
+  <h2>III.&nbsp;&nbsp;Pengujian dan Status</h2>
+  <p>Kedua penyesuaian telah diuji, termasuk skenario tolak → buka kembali → setujui yang berjalan sebagaimana mestinya, serta penyaringan daftar berdasarkan tanggal. Seluruh perubahan telah diterbitkan ke lingkungan produksi dan dapat langsung digunakan dengan memuat ulang halaman aplikasi.</p>
+
+  <h2>IV.&nbsp;&nbsp;Penutup</h2>
+  <p>Demikian laporan ini kami sampaikan sebagai bentuk tindak lanjut atas masukan yang diberikan. Apabila terdapat catatan lain, kami siap menindaklanjutinya pada pengembangan berikutnya.</p>
+
+  <div class="close">
+    <div class="blk">
+      <div>Jakarta, 6 Juli 2026</div>
+      <div>Hormat kami,</div>
+      <div class="sp"></div>
+      <div class="nm">Tim Pengembang FINA go</div>
+    </div>
+  </div>
+
+</div>
 </body>
 </html>
