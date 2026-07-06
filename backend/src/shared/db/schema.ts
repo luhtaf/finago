@@ -48,7 +48,14 @@ export const pengajuan = sqliteTable('pengajuan', {
   total: integer('total').notNull().default(0), // dihitung server = sum(item.subtotal)
   pengajuId: text('pengaju_id').notNull().references(() => users.id),
   bankAccountId: text('bank_account_id').references(() => bankAccounts.id),
+  // Daftar tujuan pencairan (bisa >1, bisa ad-hoc). JSON: [{bankName, number, holderName}].
+  rekeningList: text('rekening_list', { mode: 'json' }).$type<{ bankName: string; number: string; holderName: string }[]>(),
   notaUrl: text('nota_url'),
+  // Nama penandatangan (snapshot saat aksi) → dipakai di docx kolom Reviewed/Approved by.
+  reviewedBy: text('reviewed_by'),
+  approvedBy: text('approved_by'),
+  // State sebelum reject/return → dipakai `reopen` buat balikin keputusan (revisi).
+  prevState: text('prev_state'),
   state: text('state', {
     enum: ['draft', 'submitted', 'needs_justification', 'verified', 'approved', 'returned', 'rejected', 'paid'],
   }).notNull().default('draft'),
@@ -64,6 +71,7 @@ export const pengajuanItem = sqliteTable('pengajuan_item', {
   satuan: text('satuan'),
   harga: integer('harga').notNull().default(0),
   subtotal: integer('subtotal').notNull().default(0),
+  remark: text('remark'),
   // flag "item ini dipantau" — di-toggle manual oleh verifikator. Simpel: on/off, no interval.
   monitored: integer('monitored', { mode: 'boolean' }).notNull().default(false),
 });

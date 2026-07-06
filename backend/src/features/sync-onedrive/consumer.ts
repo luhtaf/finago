@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { db } from '../../shared/db/client';
 import { outboxEvents, pengajuan, docxFiles } from '../../shared/db/schema';
-import { graph } from '../../shared/graph/client';
+import { getSyncProvider } from '../../shared/sync/provider';
 import { r2 } from '../../shared/r2/client';
 
 const MAX_ATTEMPTS = 5;
@@ -28,8 +28,8 @@ async function handleSyncPengajuan(pengajuanId: string): Promise<void> {
     throw new Error(`sync_pengajuan: pengajuan ${pengajuanId} tidak ditemukan`);
   }
 
-  // Kolom spreadsheet OneDrive. Key `nbr` dipakai sebagai natural key (idempotent).
-  await graph.appendSpreadsheetRow({
+  // Kolom spreadsheet. Key `nbr` dipakai sebagai natural key (idempotent).
+  await getSyncProvider().appendSpreadsheetRow({
     nbr: header.nbr,
     tanggal: header.tanggal,
     kodeProyek: header.kodeProyek,
@@ -69,7 +69,7 @@ async function handleUploadDocx(pengajuanId: string): Promise<void> {
     return;
   }
 
-  const { webUrl } = await graph.uploadFile('FINA-go/pengajuan', `${header.nbr}.docx`, bytes);
+  const { webUrl } = await getSyncProvider().uploadFile('FINA-go/pengajuan', `${header.nbr}.docx`, bytes);
 
   await db
     .update(docxFiles)

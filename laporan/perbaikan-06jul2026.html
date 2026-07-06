@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Laporan Perbaikan — FINA go (6 Juli 2026)</title>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600&display=swap" rel="stylesheet" />
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap" rel="stylesheet" />
+<style>
+  :root{--navy:#1e2a8e;--navy2:#15183a;--teal:#0d9488;--teal2:#14b8a6;--ink:#181b2e;--muted:#6b7090;--line:#e3e6f0;--rose:#e11d48;--amber:#d97706;--emerald:#059669}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Satoshi',system-ui,sans-serif;color:var(--ink);background:#eef0f6;line-height:1.55;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .page{width:210mm;min-height:297mm;background:#fff;margin:10mm auto;padding:18mm 16mm;position:relative;box-shadow:0 4px 24px rgba(20,24,55,.12)}
+  .wordmark{font-size:24px;font-weight:900;color:var(--navy);letter-spacing:-.02em}.wordmark span{color:var(--teal);font-weight:500}
+  .label{font-size:8.5px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}
+  .head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--line);padding-bottom:14px}
+  .meta{text-align:right;font-size:10px;color:var(--muted)}.meta b{color:var(--ink)}
+  .pill{display:inline-block;font-size:9px;font-weight:700;padding:2px 9px;border-radius:99px}.pill.green{background:#e7f7f1;color:var(--emerald)}
+  h1{font-size:27px;font-weight:900;color:var(--navy2);letter-spacing:-.02em;margin-top:16px}
+  h2{font-size:16px;font-weight:800;color:var(--navy);margin:22px 0 4px;display:flex;align-items:center;gap:8px}
+  .num{width:22px;height:22px;border-radius:6px;background:var(--navy);color:#fff;display:inline-grid;place-items:center;font-size:12px;font-weight:800}
+  p{font-size:11.5px;margin:6px 0;color:#2c3050}.lede{font-size:12.5px;color:#3a3f63}
+  .why{background:#fbfbfe;border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:6px;padding:9px 12px;font-size:11px;color:#3a3f63;margin:8px 0}
+  .ba{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:9px 0}
+  .ba .col{padding:12px 15px}.ba .before{background:#fef5f5;border-right:1px solid var(--line)}.ba .after{background:#f0f9f6}
+  .ba h4{font-size:11px;font-weight:800;margin-bottom:6px}.before h4{color:var(--rose)}.after h4{color:var(--teal)}
+  ul{list-style:none;margin-top:4px}li{font-size:11px;padding:3px 0 3px 16px;position:relative;color:#2c3050;line-height:1.4}
+  li::before{content:"";position:absolute;left:2px;top:8px;width:5px;height:5px;border-radius:2px;background:var(--teal2)}
+  .before li::before{background:#f1a6b2}
+  .foot{position:absolute;bottom:12mm;left:16mm;right:16mm;display:flex;justify-content:space-between;font-size:8.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:6px}
+  .toolbar{position:fixed;top:14px;right:14px}.toolbar button{font-family:inherit;font-weight:700;font-size:12px;background:var(--navy);color:#fff;border:0;border-radius:8px;padding:9px 16px;cursor:pointer}
+  @media print{.toolbar{display:none}body{background:#fff}.page{margin:0;box-shadow:none;padding:14mm 15mm}@page{size:A4;margin:0}}
+</style>
+</head>
+<body>
+<div class="toolbar"><button onclick="window.print()">⤓ Cetak / Simpan PDF</button></div>
+<section class="page">
+  <div class="head">
+    <div><div class="wordmark">FINA <span>go</span></div><div class="label" style="margin-top:3px">PT. Karta Bhumi Nusantara</div></div>
+    <div class="meta"><div class="label">Laporan Perbaikan</div><div style="margin-top:4px"><b>Tanggal:</b> 6 Juli 2026</div><div><b>Status:</b> <span class="pill green">SUDAH LIVE</span></div></div>
+  </div>
+
+  <h1>Perbaikan Berdasarkan Masukan Approver</h1>
+  <p class="lede" style="margin-top:6px">Dua penyempurnaan yang diminta saat pemakaian oleh <b>approver (Wahyu&nbsp;Banitara)</b> — sudah dikerjakan &amp; diterbitkan ke produksi hari ini.</p>
+
+  <h2><span class="num">1</span> Keputusan bisa direvisi (buka kembali)</h2>
+  <div class="why"><b>Kenapa diminta:</b> "Kadang gambar nota tidak muncul, jadi keburu <i>tolak</i> — padahal setelah dicek ternyata mau di-<i>acc</i>." Approver butuh cara mengubah keputusan yang sudah terlanjur diambil.</div>
+  <div class="ba">
+    <div class="col before"><h4>✕ Sebelum</h4><ul>
+      <li>Keputusan <b>Tolak</b> bersifat final — tidak bisa diubah</li>
+      <li>Kalau salah tolak, pengajuan harus dibuat ulang dari awal</li>
+      <li>Gambar bukti kadang gagal muat tanpa cara memuat ulang</li>
+    </ul></div>
+    <div class="col after"><h4>✓ Sesudah</h4><ul>
+      <li>Tombol <b>"Buka kembali"</b> pada dokumen yang Ditolak/Dikembalikan → keputusan bisa direvisi</li>
+      <li>Dokumen otomatis kembali ke tahap sebelumnya (mis. dari <i>Ditolak</i> → <i>Terverifikasi</i>) sehingga bisa langsung di-<b>Setujui</b></li>
+      <li>Gambar bukti kini <b>dicoba muat 2×</b>; jika masih gagal ada tombol <b>"Muat ulang"</b></li>
+    </ul></div>
+  </div>
+  <p style="font-size:10.5px;color:var(--muted)">Hak akses: hanya Verifikator / Approver / Admin yang dapat membuka kembali keputusan.</p>
+
+  <h2><span class="num">2</span> Kolom &amp; filter tanggal di daftar pengajuan</h2>
+  <div class="why"><b>Kenapa diminta:</b> "Perlu ada kolom tanggal supaya bisa memilih / menyaring pengajuan berdasarkan tanggal."</div>
+  <div class="ba">
+    <div class="col before"><h4>✕ Sebelum</h4><ul>
+      <li>Daftar pengajuan tidak menampilkan tanggal</li>
+      <li>Hanya bisa disaring per status &amp; kategori</li>
+      <li>Sulit meninjau pengajuan pada periode tertentu</li>
+    </ul></div>
+    <div class="col after"><h4>✓ Sesudah</h4><ul>
+      <li>Ditambah kolom <b>"Tanggal"</b> pada daftar pengajuan</li>
+      <li>Ditambah <b>filter rentang tanggal</b> (dari – sampai)</li>
+      <li>Bisa langsung menyaring pengajuan sesuai periode</li>
+    </ul></div>
+  </div>
+
+  <h2><span class="num">✓</span> Status</h2>
+  <p>Kedua perbaikan telah <b>diuji</b> (alur tolak → buka kembali → setujui berhasil) dan <b>diterbitkan ke produksi</b>. Dapat langsung dipakai — cukup muat ulang halaman aplikasi.</p>
+
+  <p style="margin-top:16px;font-size:10px;color:var(--muted)">Disusun otomatis dari progres pengembangan FINA go · PT. Karta Bhumi Nusantara · 6 Juli 2026</p>
+  <div class="foot"><span>FINA go — Laporan Perbaikan (6 Juli 2026)</span><span>Hal. 1 / 1</span></div>
+</section>
+</body>
+</html>

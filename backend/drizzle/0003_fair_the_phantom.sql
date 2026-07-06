@@ -1,0 +1,1 @@
+ALTER TABLE `pengajuan` ADD `prev_state` text;

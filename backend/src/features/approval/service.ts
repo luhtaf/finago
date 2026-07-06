@@ -3,12 +3,6 @@ import { db } from '../../shared/db/client';
 import { pengajuan, type Pengajuan, type PengajuanState } from '../../shared/db/schema';
 import { writeAudit } from '../../shared/audit';
 
-// ⚙️ Ambang nominal untuk auto-approve saat verifikasi.
-// Kalau total <= ambang → verifikator cukup, langsung 'approved'.
-// Kalau di atas → masih butuh approver ('verified').
-// TODO: pindahkan ke config/DB (mis. tabel app_config) biar bisa diatur tanpa deploy.
-export const APPROVAL_THRESHOLD = 1_000_000;
-
 /** Error transisi state tidak valid → di-map ke HTTP 409 oleh router. */
 export class InvalidTransitionError extends Error {
   readonly code = 'invalid_transition';
@@ -40,49 +34,41 @@ async function getOrThrow(id: string): Promise<Pengajuan> {
   return row;
 }
 
-/** Pindahkan ke state baru (hanya kolom state) + tulis audit. */
+/** Pindahkan ke state baru (+ kolom tambahan opsional) + tulis audit. */
 async function transition(
   id: string,
   next: PengajuanState,
   action: string,
   actorId: string,
   meta: Record<string, unknown>,
+  extra: Partial<typeof pengajuan.$inferInsert> = {},
 ): Promise<PengajuanState> {
-  await db.update(pengajuan).set({ state: next }).where(eq(pengajuan.id, id));
+  await db.update(pengajuan).set({ state: next, ...extra }).where(eq(pengajuan.id, id));
   await writeAudit({ entity: 'pengajuan', entityId: id, action, actorId, meta });
   return next;
 }
 
 /**
- * Verifikasi pengajuan oleh verifikator.
- * Dari 'submitted' | 'needs_justification' →
- *   - total <= APPROVAL_THRESHOLD : langsung 'approved' (verifikator cukup)
- *   - total >  APPROVAL_THRESHOLD : 'verified' (masih butuh approver)
+ * Verifikasi pengajuan oleh verifikator. Dari 'submitted' | 'needs_justification' → 'verified'.
+ * Rekam `reviewedBy` = nama verifikator (muncul di docx kolom "Reviewed by"). TIDAK auto-approve.
  */
-export async function verify(id: string, actorId: string): Promise<PengajuanState> {
+export async function verify(id: string, actorId: string, actorName: string): Promise<PengajuanState> {
   const allowed: PengajuanState[] = ['submitted', 'needs_justification'];
   const row = await getOrThrow(id);
   if (!allowed.includes(row.state)) {
     throw new InvalidTransitionError(row.state, 'verify', allowed);
   }
-  const autoApprove = row.total <= APPROVAL_THRESHOLD;
-  const next: PengajuanState = autoApprove ? 'approved' : 'verified';
-  return transition(id, next, 'verify', actorId, {
-    from: row.state,
-    total: row.total,
-    threshold: APPROVAL_THRESHOLD,
-    autoApprove,
-  });
+  return transition(id, 'verified', 'verify', actorId, { from: row.state }, { reviewedBy: actorName });
 }
 
-/** Approve pengajuan oleh approver. Dari 'verified' → 'approved'. */
-export async function approve(id: string, actorId: string): Promise<PengajuanState> {
+/** Approve pengajuan oleh approver. Dari 'verified' → 'approved'. Rekam `approvedBy` = nama approver. */
+export async function approve(id: string, actorId: string, actorName: string): Promise<PengajuanState> {
   const allowed: PengajuanState[] = ['verified'];
   const row = await getOrThrow(id);
   if (!allowed.includes(row.state)) {
     throw new InvalidTransitionError(row.state, 'approve', allowed);
   }
-  return transition(id, 'approved', 'approve', actorId, { from: row.state });
+  return transition(id, 'approved', 'approve', actorId, { from: row.state }, { approvedBy: actorName });
 }
 
 /** Tolak pengajuan. Dari state non-terminal → 'rejected'. */
@@ -105,7 +91,22 @@ export async function reject(
     ];
     throw new InvalidTransitionError(row.state, 'reject', allowed);
   }
-  return transition(id, 'rejected', 'reject', actorId, { from: row.state, alasan });
+  return transition(id, 'rejected', 'reject', actorId, { from: row.state, alasan }, { prevState: row.state });
+}
+
+/**
+ * Buka kembali keputusan (revisi): dari 'rejected' | 'returned' → balik ke state
+ * sebelum keputusan (prevState, mis. 'verified' → approve lagi tersedia). Buat
+ * kasus "keburu tolak, ternyata mau di-acc". Kalau prevState kosong → 'submitted'.
+ */
+export async function reopen(id: string, actorId: string): Promise<PengajuanState> {
+  const allowed: PengajuanState[] = ['rejected', 'returned'];
+  const row = await getOrThrow(id);
+  if (!allowed.includes(row.state)) {
+    throw new InvalidTransitionError(row.state, 'reopen', allowed);
+  }
+  const back = (row.prevState as PengajuanState) ?? 'submitted';
+  return transition(id, back, 'reopen', actorId, { from: row.state, to: back }, { prevState: null });
 }
 
 /** Kembalikan untuk revisi. Dari 'submitted' | 'verified' → 'returned'. */
@@ -119,7 +120,7 @@ export async function returnForRevision(
   if (!allowed.includes(row.state)) {
     throw new InvalidTransitionError(row.state, 'return', allowed);
   }
-  return transition(id, 'returned', 'return', actorId, { from: row.state, alasan });
+  return transition(id, 'returned', 'return', actorId, { from: row.state, alasan }, { prevState: row.state });
 }
 
 /** Tandai sudah dibayar. Dari 'approved' → 'paid'. */

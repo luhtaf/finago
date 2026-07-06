@@ -24,6 +24,7 @@ export const api = {
   get: (p) => req('GET', p),
   post: (p, b) => req('POST', p, b),
   patch: (p, b) => req('PATCH', p, b),
+  del: (p) => req('DELETE', p),
   // fetch file dengan auth → object URL (buat <img> / link, karena <img> ga bisa kirim header)
   async blobUrl(path) {
     const res = await fetch(API_BASE + path, { headers: authHeaders() });

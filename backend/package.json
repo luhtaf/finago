@@ -12,7 +12,9 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "seed": "tsx src/shared/db/seed.ts",
-    "docx:sample": "tsx scripts/gen-sample-docx.ts"
+    "docx:sample": "tsx scripts/gen-sample-docx.ts",
+    "cf:dev": "wrangler dev",
+    "cf:deploy": "wrangler deploy"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.700.0",
@@ -28,6 +30,7 @@
     "@types/node": "^22.10.1",
     "drizzle-kit": "^0.28.1",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "wrangler": "^3.90.0"
   }
 }

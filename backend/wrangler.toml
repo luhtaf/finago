@@ -1,0 +1,28 @@
+name = "finago-api"
+main = "src/worker.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# R2 binding — gak butuh access key, langsung nempel. Bikin bucket dulu: wrangler r2 bucket create finago
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "finago"
+
+# Cron sync tiap 5 menit (no-op kalau SYNC_PROVIDER=none).
+[triggers]
+crons = ["*/5 * * * *"]
+
+# Secrets (JANGAN taro di sini) — set via:
+#   wrangler secret put DATABASE_URL
+#   wrangler secret put DATABASE_AUTH_TOKEN
+#   wrangler secret put JWT_SECRET
+# Sync mirror (opsional) — pilih SYNC_PROVIDER di [vars], lalu set secret-nya:
+#   SYNC_PROVIDER=google    → GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY,
+#                             GOOGLE_DRIVE_FOLDER_ID, GOOGLE_SHEET_ID, (opsional GOOGLE_SHEET_TAB)
+#   SYNC_PROVIDER=microsoft → GRAPH_TENANT_ID, GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET,
+#                             GRAPH_DRIVE_ID, GRAPH_WORKBOOK_ITEM_ID, (opsional GRAPH_WORKBOOK_TABLE)
+#   SYNC_PROVIDER=none      → no-op (default)
+# Dengan nodejs_compat, vars + secrets muncul di process.env.
+[vars]
+NODE_ENV = "production"
+SYNC_PROVIDER = "none"

@@ -11,7 +11,7 @@ Hono + Drizzle + libSQL (Turso). Portable: dev Node (`tsx`), deploy CF Workers/P
 - `src/features/<fitur>/` — `routes.ts` (Hono router, full-path, export `const <fitur>Routes`), `service.ts` (logika + DB), `CLAUDE.md` (cerita fitur).
 - `src/shared/` — `db/` (drizzle client + schema), `graph/`, `r2/`, `auth/`, `audit.ts`, `util.ts`.
 - Fitur kecil cukup `routes.ts` + `service.ts`; split lebih lanjut PAS udah gede.
-- Tiap router di-mount di `src/index.ts` lewat `app.route('/', xRoutes)`.
+- **Entry runtime**: `src/app.ts` = definisi Hono (mount semua router di sini, `app.route('/', xRoutes)`). `src/index.ts` = entry Node (dev/Render, pakai `@hono/node-server`). `src/worker.ts` = entry Cloudflare Workers (`export default {fetch,scheduled}` + set R2 binding). **JANGAN** import `@hono/node-server` di `app.ts` (biar Worker bundle aman).
 
 ## Kontrak antar-file (jangan diubah sembarangan)
 
@@ -29,8 +29,9 @@ Hono + Drizzle + libSQL (Turso). Portable: dev Node (`tsx`), deploy CF Workers/P
 
 ## Status implementasi
 
-- `auth/` **nyata** — login email+password → JWT (`hono/jwt`), middleware `jwtAuth`, scrypt hash. Lihat `features/auth/CLAUDE.md`.
+- `auth/` **nyata** — login email+password → JWT (`hono/jwt`), middleware `jwtAuth`. Hash **PBKDF2 via Web Crypto** (`crypto.subtle`) → jalan di Node DAN Workers. Format `pbkdf2$iter$salt$key`. `hashPassword`/`verifyPassword` **async**.
 - `pengajuan/docx.ts` **nyata** — library `docx`, .docx FORMULIR valid. Approver masih konstanta (`DIRECTOR_NAME`), TODO derive dari approval.
-- `r2/` **S3-compatible** — pakai AWS S3 SDK; default **MinIO** (env `R2_ENDPOINT/R2_ACCESS_KEY_ID/R2_SECRET_ACCESS_KEY/R2_BUCKET`), fallback FS (`.r2-store/`) kalau env kosong. Pindah ke Cloudflare R2 = ganti endpoint+key, kode sama. Interface `put/get/getUrl/delete`.
-- `graph/` **nyata-with-env** — Microsoft Graph app-only; aktif kalau `GRAPH_*` env di-set, no-op+log kalau gak (dev). Butuh Azure app reg buat live.
-- TODO: `JWT_SECRET` env di prod; node:crypto → Web Crypto kalau deploy ke Workers.
+- `r2/` **3 mode**: (1) **R2 binding** di Workers (`useR2Binding(env.BUCKET)` dari worker.ts — no key), (2) **S3** di Node (env `R2_ENDPOINT/R2_ACCESS_KEY_ID/...` → MinIO/R2/Supabase), (3) **FS** fallback dev. aws-sdk + node:fs di-import **dinamis** biar Worker bundle aman.
+- **Sync mirror = pluggable** via `shared/sync/provider.ts` (`getSyncProvider()`), pilih env **`SYNC_PROVIDER=none|google|microsoft`**. `google/` (Drive+Sheets, service account JWT RS256 Web Crypto, env `GOOGLE_*`) + `graph/` (OneDrive/SharePoint app-only, env `GRAPH_*`, **butuh akun kerja berbayar**). `none` default = no-op. Consumer `sync-onedrive` panggil lewat provider, bukan langsung.
+- **Deploy**: Node → Render (`npm run start`). Workers → `wrangler.toml` + `npm run cf:deploy` (R2 binding, secrets via `wrangler secret put`, Cron Trigger buat sync). Lihat `../DEPLOY.md`.
+- TODO: `JWT_SECRET` wajib di prod. Di Workers, env dibaca dari `process.env` (butuh `nodejs_compat` — vars+secrets ke-expose ke `process.env`).

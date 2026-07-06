@@ -54,7 +54,7 @@ export async function createUser(input: CreateUserInput, actorId?: string): Prom
     id,
     nama: input.nama,
     email,
-    passwordHash: hashPassword(input.password),
+    passwordHash: await hashPassword(input.password),
     roles: input.roles,
     department: input.department ?? null,
   });
@@ -87,7 +87,7 @@ export async function updateUser(
   if (input.nama !== undefined) patch.nama = input.nama;
   if (input.department !== undefined) patch.department = input.department;
   if (input.roles !== undefined) patch.roles = input.roles;
-  if (input.password) patch.passwordHash = hashPassword(input.password);
+  if (input.password) patch.passwordHash = await hashPassword(input.password);
 
   if (Object.keys(patch).length) {
     await db.update(users).set(patch).where(eq(users.id, id));

@@ -10,16 +10,20 @@
 // ⚠️ Nama tabel workbook di-hardcode 'Table1' — sesuaikan ke nama tabel asli di
 //    workbook M365 (lihat Workbook API / Excel "Table Name") kalau beda.
 
-const TENANT_ID = process.env.GRAPH_TENANT_ID;
-const CLIENT_ID = process.env.GRAPH_CLIENT_ID;
-const CLIENT_SECRET = process.env.GRAPH_CLIENT_SECRET;
-const DRIVE_ID = process.env.GRAPH_DRIVE_ID;
-const WORKBOOK_ITEM_ID = process.env.GRAPH_WORKBOOK_ITEM_ID;
-const FOLDER_PATH = process.env.GRAPH_FOLDER_PATH;
-
-const WORKBOOK_TABLE_NAME = process.env.GRAPH_WORKBOOK_TABLE ?? 'Table1';
 const DOCX_CONTENT_TYPE =
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+// ⚠️ Baca env pas dipakai (bukan module-load) — biar di Workers ke-baca secret yang benar.
+function cfg() {
+  return {
+    TENANT_ID: process.env.GRAPH_TENANT_ID,
+    CLIENT_ID: process.env.GRAPH_CLIENT_ID,
+    CLIENT_SECRET: process.env.GRAPH_CLIENT_SECRET,
+    DRIVE_ID: process.env.GRAPH_DRIVE_ID,
+    WORKBOOK_ITEM_ID: process.env.GRAPH_WORKBOOK_ITEM_ID,
+    WORKBOOK_TABLE_NAME: process.env.GRAPH_WORKBOOK_TABLE ?? 'Table1',
+  };
+}
 
 interface TokenResponse {
   access_token: string;
@@ -31,7 +35,8 @@ interface DriveItemResponse {
 }
 
 function isConfigured(): boolean {
-  return Boolean(TENANT_ID && CLIENT_ID && CLIENT_SECRET && DRIVE_ID);
+  const c = cfg();
+  return Boolean(c.TENANT_ID && c.CLIENT_ID && c.CLIENT_SECRET && c.DRIVE_ID);
 }
 
 // Token cache di module scope; reuse sampai ~60s sebelum exp.
@@ -44,15 +49,16 @@ async function getToken(): Promise<string> {
     return cachedToken;
   }
 
+  const c = cfg();
   const body = new URLSearchParams({
     grant_type: 'client_credentials',
-    client_id: CLIENT_ID as string,
-    client_secret: CLIENT_SECRET as string,
+    client_id: c.CLIENT_ID as string,
+    client_secret: c.CLIENT_SECRET as string,
     scope: 'https://graph.microsoft.com/.default',
   });
 
   const res = await fetch(
-    `https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token`,
+    `https://login.microsoftonline.com/${c.TENANT_ID}/oauth2/v2.0/token`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -79,9 +85,10 @@ export const graph = {
       return;
     }
 
+    const c = cfg();
     const token = await getToken();
     const res = await fetch(
-      `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/items/${WORKBOOK_ITEM_ID}/workbook/tables/${WORKBOOK_TABLE_NAME}/rows/add`,
+      `https://graph.microsoft.com/v1.0/drives/${c.DRIVE_ID}/items/${c.WORKBOOK_ITEM_ID}/workbook/tables/${c.WORKBOOK_TABLE_NAME}/rows/add`,
       {
         method: 'POST',
         headers: {
@@ -110,7 +117,7 @@ export const graph = {
 
     const token = await getToken();
     const res = await fetch(
-      `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root:/${folderPath}/${filename}:/content`,
+      `https://graph.microsoft.com/v1.0/drives/${cfg().DRIVE_ID}/root:/${folderPath}/${filename}:/content`,
       {
         method: 'PUT',
         headers: {

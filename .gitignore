@@ -28,8 +28,14 @@ pnpm-debug.log*
 *.xlsx
 *.xls
 *.pdf
-Reimbursement*
-Pengajuan*
-Salinan*
-BR[0-9]*
+Reimbursement*.xlsx
+Reimbursement*.docx
+Pengajuan*.xlsx
+Salinan*.xlsx
+BR[0-9]*.docx
 .gstack/
+
+# build cache
+.wrangler/
+.r2-store/
+local.db

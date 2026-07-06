@@ -60,6 +60,10 @@ Total ada **4 hasil yang harus dikumpulin** (nanti dimasukin ke app):
 
 Ini bagian agak teknis. Pelan-pelan.
 
+> ⚠️ **Penting soal `/me`:** `/me/drive` itu **cuma jalan di Graph Explorer yang udah Sign in** (Graph Explorer pakai *delegated auth* — atas nama kamu yang login). Bagian ini cuma buat **nyari ID sekali**. Kalau kamu hit `/me/drive` langsung (curl/browser tanpa login) → pasti **401 "unauthenticated"**. App FINA go pas jalan **TIDAK** pakai `/me` — dia pakai *app-only* + `/drives/{DRIVE_ID}/...` (udah bener di kode). Jadi `/me` di sini wajar dan aman, asal di Graph Explorer + Sign in.
+>
+> Alternatif tanpa Graph Explorer (pakai token app-only dari Bagian B): `GET https://graph.microsoft.com/v1.0/users/<email>/drive` → ambil `.id` = `DRIVE_ID`.
+
 1. Buka **https://developer.microsoft.com/graph/graph-explorer**.
 2. Klik **Sign in** (kanan atas) → login akun kerja yang sama. Kalau diminta consent, **Accept**.
 3. Di kotak URL (pastiin method **GET**), ketik ini lalu **Run query**:

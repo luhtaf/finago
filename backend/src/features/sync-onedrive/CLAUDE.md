@@ -4,11 +4,18 @@
 
 ## Apa yang dilakukan
 
-Konsumen **async** dari outbox: DB → OneDrive (Microsoft Graph). Bukan di jalur
-request — dipicu cron. Membaca `outbox_events` status=`pending`, proses tiap
-event sesuai `type`, lalu tandai `done` (sukses) atau retry/`failed` (gagal).
+Konsumen **async** dari outbox: DB → cloud. Bukan di jalur request — dipicu cron.
+Membaca `outbox_events` status=`pending`, proses tiap event sesuai `type`, lalu
+tandai `done` (sukses) atau retry/`failed` (gagal).
 
-Fitur `pengajuan` yang **menulis** event saat submit; di sini kita cuma konsumsi.
+**Tujuan sync = pluggable** via `getSyncProvider()` (`shared/sync/provider.ts`),
+dipilih env **`SYNC_PROVIDER`**:
+- `none` (default) → no-op.
+- `google` → `shared/google/client.ts` (Drive + Sheets, service account, env `GOOGLE_*`).
+- `microsoft` → `shared/graph/client.ts` (OneDrive/SharePoint via Graph app-only, env `GRAPH_*`, **butuh akun kerja berbayar** — bukan akun personal).
+
+Consumer **gak** manggil `graph`/`google` langsung — selalu lewat `getSyncProvider()`.
+Fitur `pengajuan` yang **menulis** event saat submit; di sini cuma konsumsi.
 Jangan ubah nilai `type` tanpa sinkron dengan penulis.
 
 ## Event types + mapping kolom
@@ -18,8 +25,8 @@ Jangan ubah nilai `type` tanpa sinkron dengan penulis.
 
 | `type` | payload | aksi |
 |---|---|---|
-| `sync_pengajuan` | `{ pengajuanId }` | `graph.appendSpreadsheetRow(row)` — append 1 baris ke spreadsheet OneDrive |
-| `upload_docx` | `{ pengajuanId }` | cari `docx_files`, `graph.uploadFile('FINA-go/pengajuan', '<nbr>.docx', bytes)`, lalu update `docx_files.onedriveUrl` + status `synced` |
+| `sync_pengajuan` | `{ pengajuanId }` | `getSyncProvider().appendSpreadsheetRow(row)` — append 1 baris ke spreadsheet (Sheet/Excel) |
+| `upload_docx` | `{ pengajuanId }` | cari `docx_files`, `getSyncProvider().uploadFile('FINA-go/pengajuan', '<nbr>.docx', bytes)`, lalu update `docx_files.onedriveUrl` + status `synced` |
 
 Kolom row `sync_pengajuan` (urut): `nbr`, `tanggal`, `kodeProyek`, `kategori`,
 `nama`, `total`, `state`, `pengajuId`.
@@ -51,11 +58,12 @@ Gagal → `attempts++`; tetap `pending` (di-retry run berikutnya) sampai
 | GET  | `/admin/sync/status` | admin | jumlah outbox per status + `lastProcessedAt` |
 | POST | `/admin/sync/run`    | admin | trigger `runSync()` sekali manual (testing) |
 
-## Catatan / TODO
+## Catatan
 
-- **Graph masih STUB** (`shared/graph/client.ts`): `appendSpreadsheetRow` cuma
-  `console.log`, `uploadFile` balikin URL dummy. Implementasi nyata = app-only auth
-  + Workbook API + upload `PUT .../content`.
-- **R2 stub**: `upload_docx` belum fetch bytes asli — kirim `Uint8Array(0)`
-  placeholder. TODO: ambil bytes dari R2 (`doc.r2Key`) begitu R2 bukan stub.
+- Provider **nyata** semua: `google` (Drive/Sheets, service account JWT RS256 via Web
+  Crypto) + `microsoft` (Graph app-only). Default `none` = no-op (aman tanpa env).
+- `upload_docx` ambil bytes asli dari R2 (`doc.r2Key`) → kirim ke provider.
+- **Microsoft butuh akun KERJA** (OneDrive for Business) — akun personal (M365 Family)
+  GAK BISA app-only. Google cukup service account gratis + share folder/sheet ke email SA.
+- Idempotency upload: Google cari file by-nama di folder → overwrite (bukan duplikat).
 - Tidak menyentuh file di luar folder ini.

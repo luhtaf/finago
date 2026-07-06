@@ -2,12 +2,12 @@ import { db } from './client';
 import { projects, users, bankAccounts } from './schema';
 import { hashPassword } from '../../features/auth/password';
 
-// password semua user demo: "fina123"
-const PW = hashPassword('fina123');
-
 // Seed master data dari REKAP COP + 1 demo user + rekening verified.
 // Jalanin: npm run seed
 async function main() {
+  // password semua user demo: "fina123"
+  const PW = await hashPassword('fina123');
+
   await db.insert(projects).values([
     { kode: 'PRO001', deskripsi: 'APP Group — QC Canal Limbah OKI' },
     { kode: 'PRO002', deskripsi: 'Pemda Raja Ampat — PPBW' },

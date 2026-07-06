@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Laporan Progres — FINA go</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet" />
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --navy:#1e2a8e; --navy2:#15183a; --teal:#0d9488; --teal2:#14b8a6;
+    --ink:#181b2e; --muted:#6b7090; --line:#e3e6f0; --paper:#fff; --bg:#eef0f6;
+    --rose:#e11d48; --amber:#d97706; --emerald:#059669;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Satoshi',system-ui,sans-serif;color:var(--ink);background:var(--bg);line-height:1.55;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .page{width:210mm;min-height:297mm;background:var(--paper);margin:10mm auto;padding:18mm 16mm;position:relative;box-shadow:0 4px 24px rgba(20,24,55,.12)}
+  h1,h2,h3{line-height:1.15;letter-spacing:-.01em}
+  .doc-title{font-size:30px;font-weight:900;color:var(--navy2)}
+  h2{font-size:18px;font-weight:800;color:var(--navy);margin:22px 0 10px;padding-bottom:7px;border-bottom:2px solid var(--navy)}
+  h3{font-size:14px;font-weight:700;color:var(--ink);margin:16px 0 6px}
+  p{font-size:11.5px;margin:6px 0;color:#2c3050}
+  .lede{font-size:12.5px;color:#3a3f63}
+  .wordmark{font-size:26px;font-weight:900;color:var(--navy);letter-spacing:-.02em}
+  .wordmark span{color:var(--teal);font-weight:500}
+  .label{font-size:8.5px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}
+  .muted{color:var(--muted)}
+  .head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:6px}
+  .meta{text-align:right;font-size:10px;color:var(--muted)}
+  .meta b{color:var(--ink)}
+  .pill{display:inline-block;font-size:9px;font-weight:700;padding:2px 9px;border-radius:99px;letter-spacing:.03em}
+  .pill.green{background:#e7f7f1;color:var(--emerald)} .pill.navy{background:#e8eaf7;color:var(--navy)} .pill.amber{background:#fdf2e3;color:var(--amber)}
+  ul{margin:6px 0 6px 0;padding-left:0;list-style:none}
+  li{font-size:11.5px;padding:3px 0 3px 18px;position:relative;color:#2c3050}
+  li::before{content:"";position:absolute;left:2px;top:9px;width:6px;height:6px;border-radius:2px;background:var(--teal2)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .card{border:1px solid var(--line);border-radius:10px;padding:13px 15px;background:#fcfcfe}
+  .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
+  .kpi .card{text-align:center;padding:14px 8px}
+  .kpi .num{font-size:24px;font-weight:900;color:var(--navy);letter-spacing:-.02em}
+  .kpi .cap{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-top:2px}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:10.5px}
+  th{background:var(--navy2);color:#fff;text-align:left;padding:7px 9px;font-weight:700;font-size:9.5px;text-transform:uppercase;letter-spacing:.05em}
+  td{padding:7px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:nth-child(even) td{background:#f8f9fc}
+  .ba{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:10px 0}
+  .ba .col{padding:12px 14px}
+  .ba .before{background:#fef5f5;border-right:1px solid var(--line)}
+  .ba .after{background:#f0f9f6}
+  .ba h4{font-size:11px;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+  .ba .before h4{color:var(--rose)} .ba .after h4{color:var(--teal)}
+  .ba li{font-size:10.5px;padding-left:16px} .ba li::before{top:8px;width:5px;height:5px}
+  .ba .before li::before{background:#f4a3b0} .ba .after li::before{background:var(--teal2)}
+  .foot{position:absolute;bottom:10mm;left:16mm;right:16mm;display:flex;justify-content:space-between;font-size:8.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:6px}
+  .flow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:8px 0}
+  .flow .step{font-size:9.5px;font-weight:700;padding:5px 10px;border-radius:7px;background:#e8eaf7;color:var(--navy)}
+  .flow .arr{color:var(--teal);font-weight:900}
+  .note{background:#fbfbfe;border:1px solid var(--line);border-left:3px solid var(--teal2);border-radius:6px;padding:9px 12px;font-size:10.5px;color:#3a3f63;margin:10px 0}
+  .toolbar{position:fixed;top:14px;right:14px;z-index:10}
+  .toolbar button{font-family:inherit;font-weight:700;font-size:12px;background:var(--navy);color:#fff;border:0;border-radius:8px;padding:9px 16px;cursor:pointer;box-shadow:0 4px 14px rgba(30,42,142,.3)}
+  @media print{ .toolbar{display:none} body{background:#fff} .page{margin:0;box-shadow:none;width:auto;min-height:auto;padding:14mm 15mm} @page{size:A4;margin:0} }
+</style>
+</head>
+<body>
+<div class="toolbar"><button onclick="window.print()">⤓ Cetak / Simpan PDF</button></div>
+
+<!-- ===================== HALAMAN 1 ===================== -->
+<section class="page">
+  <div class="head">
+    <div>
+      <div class="wordmark">FINA <span>go</span></div>
+      <div class="label" style="margin-top:3px">PT. Karta Bhumi Nusantara</div>
+    </div>
+    <div class="meta">
+      <div class="label">Laporan Progres Pengembangan</div>
+      <div style="margin-top:4px"><b>Periode:</b> 16 – 27 Juni 2026</div>
+      <div><b>Status:</b> <span class="pill green">LIVE / PRODUKSI</span></div>
+    </div>
+  </div>
+
+  <h1 class="doc-title" style="margin-top:18px">Laporan Pengembangan FINA&nbsp;go</h1>
+  <p class="lede" style="margin-top:8px">Aplikasi internal pengajuan <b>reimbursement</b> &amp; <b>purchase request</b> — menggantikan alur manual (Google&nbsp;Form + Excel + dokumen Word) dengan satu sistem terpadu: input rincian, hitung total otomatis, alur persetujuan berjenjang, dan dokumen FORMULIR (.docx) yang ter-generate sendiri.</p>
+
+  <h2>1. Ringkasan Eksekutif</h2>
+  <p>Dalam dua minggu, FINA&nbsp;go telah <b>dibangun penuh dari nol hingga live di produksi</b> dan disempurnakan berdasarkan masukan tim Finance. Aplikasi kini berjalan online, dapat diakses dari mana saja, tanpa server fisik dan tanpa biaya bulanan (memanfaatkan <i>free tier</i> Cloudflare).</p>
+  <div class="kpi">
+    <div class="card"><div class="num">100%</div><div class="cap">Fitur inti selesai</div></div>
+    <div class="card"><div class="num">14</div><div class="cap">Masukan ditindaklanjuti</div></div>
+    <div class="card"><div class="num">Rp 0</div><div class="cap">Biaya server / bln</div></div>
+    <div class="card"><div class="num">LIVE</div><div class="cap">Sudah produksi</div></div>
+  </div>
+
+  <h2>2. Apa Itu FINA go</h2>
+  <div class="grid2">
+    <div class="card">
+      <div class="label">Masalah Lama</div>
+      <ul style="margin-top:5px">
+        <li>Rincian item di-tulis bebas di 1 kolom → susah dihitung &amp; diaudit</li>
+        <li>Rekap manual antara Google Form, Excel, dan Word</li>
+        <li>Nomor dokumen &amp; persetujuan dikelola manual</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="label">Solusi FINA go</div>
+      <ul style="margin-top:5px">
+        <li>Form <b>line-item</b> → total terhitung otomatis</li>
+        <li>Dokumen FORMULIR (.docx) generate sendiri + bukti ter-embed</li>
+        <li>Alur persetujuan + tanda tangan digital "Signed via System"</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>3. Alur Persetujuan Dokumen</h2>
+  <div class="flow">
+    <span class="step">Pengaju · Submit</span><span class="arr">→</span>
+    <span class="step">Verifikasi (Adinda)</span><span class="arr">→</span>
+    <span class="step">Approval (Wahyu)</span><span class="arr">→</span>
+    <span class="step">Pencairan / Cair (Admin)</span>
+  </div>
+  <p>Tiap tahap memunculkan nama &amp; tanda tangan <b>"Signed via System"</b> di dokumen secara otomatis — <i>Prepared &amp; Requested by</i> (pengaju), <i>Reviewed by</i> (verifikator), <i>Approved by</i> (approver). Jika perlu revisi, dokumen bisa <b>dikembalikan</b> ke pengaju; jika tidak sesuai, bisa <b>ditolak</b>.</p>
+
+  <div class="foot"><span>FINA go — Laporan Progres</span><span>Hal. 1 / 3</span></div>
+</section>
+
+<!-- ===================== HALAMAN 2 ===================== -->
+<section class="page">
+  <h2 style="margin-top:0">4. Pencapaian Minggu Lalu <span class="muted" style="font-size:12px;font-weight:500">(16 – 21 Juni)</span></h2>
+  <p class="muted" style="font-size:11px">Fondasi: membangun seluruh aplikasi end-to-end, menindaklanjuti 11 masukan tim, lalu menerbitkan ke produksi.</p>
+
+  <h3>Fitur inti yang dibangun</h3>
+  <div class="grid2">
+    <ul>
+      <li><b>Form pengajuan line-item</b> + hitung total otomatis</li>
+      <li><b>Generate dokumen FORMULIR (.docx)</b> sesuai template resmi</li>
+      <li><b>Lampiran bukti</b> (foto nota) ter-embed di dokumen</li>
+      <li><b>Login &amp; keamanan sendiri</b> (token + hash password)</li>
+    </ul>
+    <ul>
+      <li><b>Dashboard visualisasi</b>: grafik per bulan, status, proyek, pengaju, &amp; item</li>
+      <li><b>Manajemen pengguna</b> (admin &amp; approver)</li>
+      <li><b>Item dipantau</b> — penanda item untuk verifikator</li>
+      <li><b>Manajemen rekening</b> tujuan pencairan</li>
+    </ul>
+  </div>
+
+  <h3>11 Masukan tim Finance yang dikerjakan</h3>
+  <table>
+    <thead><tr><th style="width:55%">Masukan</th><th>Hasil</th></tr></thead>
+    <tbody>
+      <tr><td>Lampiran bukti maksimal 10 per pengajuan</td><td>✅ s/d 10, bisa hapus</td></tr>
+      <tr><td>Hilangkan pilihan "Urgent / Biasa" di form</td><td>✅ dihapus</td></tr>
+      <tr><td>Nomor BR ditambah tahun (mis. BR0012026)</td><td>✅ format baru</td></tr>
+      <tr><td>Tambah kolom "Reviewed by" di dokumen Word</td><td>✅ 3 kolom TTD</td></tr>
+      <tr><td>Tanda "Signed via System" otomatis tiap tahap</td><td>✅ otomatis</td></tr>
+      <tr><td>Dashboard list: tambah kolom "Nama Pengaju"</td><td>✅ ditambah</td></tr>
+      <tr><td>Font dokumen → Aptos Narrow</td><td>✅ diganti</td></tr>
+      <tr><td>Kolom "Remarks" pada rincian anggaran</td><td>✅ ditambah</td></tr>
+      <tr><td>Opsi "Rekening Lainnya" (isi manual di form)</td><td>✅ ditambah</td></tr>
+      <tr><td>Bisa pilih &gt;1 rekening untuk pencairan</td><td>✅ multi-rekening</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Penerbitan ke Produksi (Deploy)</h3>
+  <p>Seluruh aplikasi di-online-kan memakai <b>Cloudflare</b> + <b>Turso</b> — tanpa server fisik, tanpa biaya bulanan:</p>
+  <table>
+    <thead><tr><th>Komponen</th><th>Layanan</th><th>Biaya</th></tr></thead>
+    <tbody>
+      <tr><td>Tampilan (Frontend)</td><td>Cloudflare Pages</td><td>Gratis</td></tr>
+      <tr><td>Server/Logika (API)</td><td>Cloudflare Workers</td><td>Gratis</td></tr>
+      <tr><td>Database</td><td>Turso (libSQL)</td><td>Gratis</td></tr>
+      <tr><td>Penyimpanan file</td><td>Cloudflare R2</td><td>Gratis</td></tr>
+    </tbody>
+  </table>
+  <div class="note">Investigasi integrasi <b>OneDrive</b> juga dilakukan: disiapkan <b>mode sync fleksibel</b> (Tidak ada / Google / Microsoft) agar mudah disambungkan nanti. Detail di bagian "Langkah Berikutnya".</div>
+
+  <div class="foot"><span>FINA go — Laporan Progres</span><span>Hal. 2 / 3</span></div>
+</section>
+
+<!-- ===================== HALAMAN 3 ===================== -->
+<section class="page">
+  <h2 style="margin-top:0">5. Pengerjaan Minggu Ini <span class="muted" style="font-size:12px;font-weight:500">(22 – 27 Juni)</span></h2>
+  <p class="muted" style="font-size:11px">Fokus: merapikan <b>tata kelola persetujuan</b> & kontrol dokumen — disajikan sebagai perbandingan <b>Sebelum → Sesudah</b>.</p>
+
+  <h3>A. Alur Verifikasi &amp; Persetujuan</h3>
+  <div class="ba">
+    <div class="col before"><h4>✕ Sebelum</h4><ul>
+      <li>Klik "Verifikasi" pada nominal kecil <b>langsung ter-setujui otomatis</b></li>
+      <li>Dokumen langsung ter-tanda-tangan di kolom <b>Reviewed &amp; Approved sekaligus</b> → membingungkan</li>
+      <li>Nama penanda tangan <b>di-hardcode</b> (tetap)</li>
+    </ul></div>
+    <div class="col after"><h4>✓ Sesudah</h4><ul>
+      <li>"Verifikasi" hanya menandai <b>"Reviewed by"</b>; persetujuan jadi langkah terpisah</li>
+      <li>Tombol "Approve" tetap muncul setelah verifikasi → alur jelas &amp; berurutan</li>
+      <li>Nama TTD <b>dinamis</b> — mengikuti siapa yang menekan tombol</li>
+    </ul></div>
+  </div>
+
+  <h3>B. Peran &amp; Tombol Pengguna</h3>
+  <div class="ba">
+    <div class="col before"><h4>✕ Sebelum</h4><ul>
+      <li>User Wahyu punya tombol <b>"Cair"</b> (pencairan)</li>
+      <li>Pencairan bisa ditekan beberapa peran</li>
+    </ul></div>
+    <div class="col after"><h4>✓ Sesudah</h4><ul>
+      <li>Wahyu murni <b>Verifikator + Approver</b> — tombol "Cair" dihilangkan</li>
+      <li>"Cair" <b>khusus Admin (Adinda)</b> sebagai tanda dokumen sudah clear</li>
+    </ul></div>
+  </div>
+
+  <h3>C. Hapus Pengajuan &amp; Penomoran</h3>
+  <div class="ba">
+    <div class="col before"><h4>✕ Sebelum</h4><ul>
+      <li>Pengajuan yang <b>salah tidak bisa dihapus</b></li>
+      <li>Nomor BR bisa "bolong" jika ada yang batal</li>
+    </ul></div>
+    <div class="col after"><h4>✓ Sesudah</h4><ul>
+      <li>Tombol <b>Hapus</b> + konfirmasi. Pengaju: hanya miliknya; Admin/Approver/Verifikator: semua</li>
+      <li>Nomor BR <b>otomatis dirapatkan</b> (mis. BR003 dihapus → BR004 naik jadi BR003)</li>
+    </ul></div>
+  </div>
+
+  <h2>6. Status &amp; Langkah Berikutnya</h2>
+  <div class="grid2">
+    <div class="card">
+      <div class="label">Sudah Live</div>
+      <ul style="margin-top:5px">
+        <li>Aplikasi dapat dipakai penuh oleh tim sekarang</li>
+        <li>3 akun siap: Pengaju, Admin, Approver</li>
+        <li>Semua masukan terkini sudah terpasang</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="label">Opsional — Sinkron ke Cloud</div>
+      <ul style="margin-top:5px">
+        <li><b>Google Drive/Sheets</b> — gratis (akun service)</li>
+        <li><b>OneDrive</b> — butuh akun Microsoft 365 Business (~$6/bln)</li>
+        <li>Sistem sudah siap, tinggal pilih &amp; isi kredensial</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note"><b>Catatan integrasi OneDrive:</b> akun Microsoft 365 <i>Family</i> (personal) tidak bisa dipakai sinkron otomatis — secara teknis hanya akun <i>kerja</i> (Business) yang didukung. Alternatif gratis: Google Drive via akun service. Keputusan diserahkan ke kebutuhan Finance.</div>
+
+  <p class="muted" style="margin-top:14px;font-size:10px">Disusun otomatis dari progres pengembangan FINA go · PT. Karta Bhumi Nusantara · 27 Juni 2026</p>
+  <div class="foot"><span>FINA go — Laporan Progres</span><span>Hal. 3 / 3</span></div>
+</section>
+
+</body>
+</html>

@@ -4,6 +4,5 @@ local.db-*
 *.db
 .env
 .dev.vars
-drizzle/
 dist/
 .r2-store/

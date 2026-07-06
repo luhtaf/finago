@@ -7,6 +7,7 @@ import {
   approve,
   reject,
   returnForRevision,
+  reopen,
   markPaid,
   listPending,
   InvalidTransitionError,
@@ -42,7 +43,8 @@ approvalRoutes.get('/approvals/pending', async (c) => {
 // POST /pengajuan/:id/verify — verifikator.
 approvalRoutes.post('/pengajuan/:id/verify', requireRole('verifikator'), async (c) => {
   try {
-    const state = await verify(c.req.param('id')!, getUser(c).id);
+    const u = getUser(c);
+    const state = await verify(c.req.param('id')!, u.id, u.nama);
     return c.json({ ok: true, state });
   } catch (err) {
     return mapError(c, err);
@@ -52,7 +54,8 @@ approvalRoutes.post('/pengajuan/:id/verify', requireRole('verifikator'), async (
 // POST /pengajuan/:id/approve — approver.
 approvalRoutes.post('/pengajuan/:id/approve', requireRole('approver'), async (c) => {
   try {
-    const state = await approve(c.req.param('id')!, getUser(c).id);
+    const u = getUser(c);
+    const state = await approve(c.req.param('id')!, u.id, u.nama);
     return c.json({ ok: true, state });
   } catch (err) {
     return mapError(c, err);
@@ -87,8 +90,18 @@ approvalRoutes.post('/pengajuan/:id/return', requireRole('verifikator', 'approve
   }
 });
 
-// POST /pengajuan/:id/pay — verifikator / admin.
-approvalRoutes.post('/pengajuan/:id/pay', requireRole('verifikator', 'admin'), async (c) => {
+// POST /pengajuan/:id/reopen — verifikator / approver / admin. Revisi keputusan (rejected/returned → balik).
+approvalRoutes.post('/pengajuan/:id/reopen', requireRole('verifikator', 'approver', 'admin'), async (c) => {
+  try {
+    const state = await reopen(c.req.param('id')!, getUser(c).id);
+    return c.json({ ok: true, state });
+  } catch (err) {
+    return mapError(c, err);
+  }
+});
+
+// POST /pengajuan/:id/pay — admin only (pencairan = tanda dokumen clear).
+approvalRoutes.post('/pengajuan/:id/pay', requireRole('admin'), async (c) => {
   try {
     const state = await markPaid(c.req.param('id')!, getUser(c).id);
     return c.json({ ok: true, state });
