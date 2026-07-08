@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Laporan Perbaikan Aplikasi FINA go — 8 Juli 2026</title>
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,900&display=swap" rel="stylesheet" />
+<style>
+  :root{--ink:#20232e;--sub:#565a68;--rule:#232634;--faint:#8b8f9c;--line:#e0e2ea;--navy:#1e2a8e;--teal:#0d9488;--tealbg:#eef7f4;--rose:#e11d48;--rosebg:#fef2f4}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Satoshi',system-ui,sans-serif;color:var(--ink);background:#e9eaee;line-height:1.68;font-size:11.7pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .doc{max-width:210mm;margin:12mm auto;background:#fff;padding:22mm 22mm 20mm;box-shadow:0 3px 22px rgba(0,0,0,.12)}
+  .kop{text-align:center;border-bottom:2px solid var(--rule);padding-bottom:12px}
+  .kop .co{font-size:15pt;font-weight:900;letter-spacing:.01em;color:var(--rule)}
+  .kop .sub{font-size:9.5pt;color:var(--faint);margin-top:2px}
+  .title{text-align:center;margin:20px 0 2px}.title h1{font-size:15pt;font-weight:800;letter-spacing:-.01em}
+  .meta{margin:16px 0 22px;font-size:10.6pt;color:var(--sub);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:9px 0}
+  .meta table{border-collapse:collapse}.meta td{padding:2px 0;vertical-align:top}
+  .meta td.k{width:104px;color:var(--faint);font-weight:600}.meta td.s{width:14px}.meta td b{color:var(--ink);font-weight:600}
+  h2{font-size:12.6pt;font-weight:800;color:var(--navy);margin:26px 0 8px}
+  h3{font-size:12pt;font-weight:700;margin:20px 0 8px}
+  p{margin:8px 0}
+  .catatan{background:var(--tealbg);border-left:4px solid var(--teal);border-radius:4px;padding:11px 15px;margin:10px 0}
+  .catatan .who{font-size:8.5pt;text-transform:uppercase;letter-spacing:.1em;color:var(--teal);font-weight:800;margin-bottom:3px}
+  .catatan .q{font-style:italic;color:#243f39;font-size:11.2pt}
+  .errbar{display:flex;align-items:center;gap:9px;background:var(--rosebg);border:1px solid #f6d2da;border-radius:8px;padding:9px 14px;margin:10px 0;color:#a3122f;font-size:10.5pt}
+  .errbar .ico{font-size:12pt}.errbar code{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9.8pt;color:#8a0f28}
+  .lbl{font-size:9pt;text-transform:uppercase;letter-spacing:.09em;color:var(--faint);font-weight:800;margin:14px 0 5px}
+  ul.clean{list-style:none;margin:4px 0}ul.clean li{position:relative;padding:4px 0 4px 20px}
+  ul.clean li::before{content:"";position:absolute;left:2px;top:12px;width:6px;height:6px;border-radius:2px;background:var(--teal)}
+  .note{font-size:10pt;color:var(--sub);margin-top:6px}
+  figure{margin:16px 0 6px;text-align:center;break-inside:avoid;page-break-inside:avoid}
+  figure img{max-width:82%;border:1px solid var(--line);border-radius:4px}
+  figcaption{font-size:9.6pt;color:var(--sub);margin-top:7px}figcaption b{color:var(--ink)}
+  .badge{display:inline-block;font-size:9pt;font-weight:700;padding:2px 10px;border-radius:99px;background:var(--tealbg);color:var(--teal)}
+  .close{margin-top:30px;display:flex;justify-content:flex-end;text-align:center}
+  .close .blk{min-width:60mm}.close .sp{height:20mm}
+  .close .nm{font-weight:700;border-top:1px solid var(--ink);padding-top:4px;display:inline-block;min-width:56mm}
+  .toolbar{position:fixed;top:14px;right:14px}
+  .toolbar button{font-family:inherit;font-weight:700;font-size:12px;background:var(--navy);color:#fff;border:0;border-radius:7px;padding:9px 16px;cursor:pointer}
+  @media print{.toolbar{display:none}body{background:#fff}.doc{max-width:none;margin:0;padding:0;box-shadow:none}@page{size:A4;margin:20mm}}
+</style>
+</head>
+<body>
+<div class="toolbar"><button onclick="window.print()">⤓ Cetak / Simpan PDF</button></div>
+<div class="doc">
+
+  <div class="kop">
+    <div class="co">PT. KARTA BHUMI NUSANTARA</div>
+    <div class="sub">Aplikasi Pengajuan Reimbursement &amp; Purchase Request — FINA go</div>
+  </div>
+  <div class="title"><h1>Laporan Perbaikan Aplikasi</h1></div>
+
+  <div class="meta">
+    <table>
+      <tr><td class="k">Perihal</td><td class="s">:</td><td>Perbaikan kendala pada tombol Hapus (menu Pengajuan)</td></tr>
+      <tr><td class="k">Tanggal</td><td class="s">:</td><td><b>8 Juli 2026</b></td></tr>
+      <tr><td class="k">Status</td><td class="s">:</td><td><b>Sudah diperbaiki</b> &amp; live di produksi</td></tr>
+      <tr><td class="k">Disusun oleh</td><td class="s">:</td><td>Tim Pengembang FINA go</td></tr>
+    </table>
+  </div>
+
+  <h2>I. Kendala yang Dilaporkan</h2>
+  <div class="catatan">
+    <div class="who">Laporan pengguna</div>
+    <div class="q">“Izin menyampaikan, ini untuk tombol delete di FINA go bagian pengajuan — saat mau klik hapus, keluar notifikasi <i>unexpected token</i>. Mohon dibantu arahannya.”</div>
+  </div>
+  <p>Saat menekan tombol <b>Hapus</b> pada daftar pengajuan, muncul pesan kesalahan berikut dan pengajuan gagal terhapus:</p>
+  <div class="errbar"><span class="ico">⚠️</span> <code>Unexpected token 'I', "Internal S"… is not valid JSON</code></div>
+
+  <h2>II. Penyebab</h2>
+  <p>Data pengajuan pada aplikasi sudah cukup banyak (lebih dari 40 baris). Ketika sebuah pengajuan dihapus, sistem <b>sekaligus merapikan ulang nomor BR</b> agar tidak ada nomor yang bolong — sehingga dalam satu proses sistem mengirim <b>puluhan perintah ke database sekaligus</b>.</p>
+  <p>Layanan server yang dipakai (Cloudflare) membatasi jumlah perintah dalam satu proses. Karena datanya banyak, batas tersebut terlampaui, server menghentikan proses dan mengembalikan pesan <i>“Internal Server Error”</i> — yang di sisi aplikasi terbaca sebagai <i>“Unexpected token …”</i>. Karena sifatnya bergantung pada jumlah data, kendala ini <b>tidak muncul saat data masih sedikit</b> dan baru terasa setelah data bertambah banyak.</p>
+
+  <h2>III. Perbaikan yang Dilakukan</h2>
+  <div class="lbl">Yang kami buatkan</div>
+  <ul class="clean">
+    <li>Proses hapus + perapian nomor BR <b>digabung menjadi satu perintah</b> ke database (dari puluhan perintah menjadi ± dua). Dengan demikian batas server tidak lagi terlampaui, berapa pun banyaknya data.</li>
+    <li>Pesan kesalahan pada aplikasi <b>dirapikan</b> — bila terjadi gangguan, yang tampil pesan yang mudah dipahami, bukan tulisan teknis <i>“Unexpected token …”</i>.</li>
+  </ul>
+  <figure>
+    <img src="img/perbaikan-hapus-modal.png" alt="Konfirmasi hapus pengajuan" />
+    <figcaption><b>Gambar 1.</b> Tampilan konfirmasi Hapus — kini berjalan normal; nomor BR otomatis dirapatkan setelah penghapusan.</figcaption>
+  </figure>
+
+  <h2>IV. Hasil Pengujian &amp; Status</h2>
+  <p>Perbaikan telah <b>diuji langsung pada data produksi (42 baris)</b>: penghapusan berhasil tanpa kesalahan <span class="badge">berhasil</span> dan penomoran BR tetap rapat/berurutan. Perubahan sudah <b>diterbitkan ke produksi</b> — silakan muat ulang halaman aplikasi, tombol Hapus sudah dapat digunakan kembali seperti biasa.</p>
+
+  <div class="close">
+    <div class="blk">
+      <div>Jakarta, 8 Juli 2026</div>
+      <div>Hormat kami,</div>
+      <div class="sp"></div>
+      <div class="nm">Tim Pengembang FINA go</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
