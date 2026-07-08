@@ -15,8 +15,9 @@ async function req(method, path, body) {
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   const text = await res.text();
-  const data = text ? JSON.parse(text) : null;
-  if (!res.ok) throw new Error(data?.message || data?.error || `HTTP ${res.status}`);
+  let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch { data = null; } // respons non-JSON (mis. "Internal Server Error")
+  if (!res.ok) throw new Error((data && (data.message || data.error)) || text || `HTTP ${res.status}`);
   return data;
 }
 

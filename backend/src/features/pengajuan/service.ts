@@ -158,22 +158,22 @@ export async function deletePengajuan(id: string, actorId?: string) {
   if (!header) return null;
   const year = header.nbr.slice(-4);
 
-  await db.transaction(async (tx) => {
-    await tx.delete(pengajuanItem).where(eq(pengajuanItem.pengajuanId, id));
-    await tx.delete(docxFiles).where(eq(docxFiles.pengajuanId, id));
-    await tx.delete(pengajuan).where(eq(pengajuan.id, id));
+  // sisa pengajuan tahun sama (kecuali yg dihapus), urut createdAt → jadi urutan nomor baru
+  const rest = (await db.select({ id: pengajuan.id, nbr: pengajuan.nbr }).from(pengajuan).orderBy(asc(pengajuan.createdAt)))
+    .filter((r) => r.id !== id && inYear(r.nbr, year));
 
-    // renumber tahun ini: ambil sisa pengajuan tahun yg sama urut createdAt → BR001.., BR002..
-    // 2 fase (temp dulu) biar gak tabrakan unique constraint pas geser nomor.
-    const rest = (await tx.select({ id: pengajuan.id, nbr: pengajuan.nbr }).from(pengajuan).orderBy(asc(pengajuan.createdAt)))
-      .filter((r) => inYear(r.nbr, year));
-    for (const r of rest) {
-      await tx.update(pengajuan).set({ nbr: `TMP-${r.id}` }).where(eq(pengajuan.id, r.id));
-    }
-    for (let i = 0; i < rest.length; i++) {
-      await tx.update(pengajuan).set({ nbr: nbrFor(i + 1, year) }).where(eq(pengajuan.id, rest[i]!.id));
-    }
-  });
+  // ⚠️ SEMUA jadi 1 batch (atomic, 1 subrequest ke Turso). JANGAN pakai transaksi
+  // interaktif statement-per-statement → di Cloudflare Workers kena limit subrequest
+  // ("Too many subrequests") begitu jumlah baris besar. Renumber 2-fase (TMP → final)
+  // biar gak tabrakan unique `nbr`.
+  const stmts = [
+    db.delete(pengajuanItem).where(eq(pengajuanItem.pengajuanId, id)),
+    db.delete(docxFiles).where(eq(docxFiles.pengajuanId, id)),
+    db.delete(pengajuan).where(eq(pengajuan.id, id)),
+    ...rest.map((r) => db.update(pengajuan).set({ nbr: `TMP-${r.id}` }).where(eq(pengajuan.id, r.id))),
+    ...rest.map((r, i) => db.update(pengajuan).set({ nbr: nbrFor(i + 1, year) }).where(eq(pengajuan.id, r.id))),
+  ];
+  await db.batch(stmts as unknown as Parameters<typeof db.batch>[0]);
 
   await writeAudit({ entity: 'pengajuan', entityId: id, action: 'delete', actorId, meta: { nbr: header.nbr } });
   return { id, nbr: header.nbr, pengajuId: header.pengajuId };
