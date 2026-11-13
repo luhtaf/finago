@@ -30,5 +30,5 @@ Kelola user (CRUD ringan) untuk admin/approver: lihat daftar user, bikin user ba
 ## Catatan
 
 - ⚠️ Route **belum di-mount**. Parent (`src/index.ts`) yang mount: `app.route('/', usersRoutes)`.
-- Auth masih STUB (`getUser` balikin demo user dengan semua role) — endpoint bisa di-test langsung.
+- Approver boleh kelola user, TAPI cuma admin yang boleh kasih role `admin` / ubah akun admin (cegah eskalasi). Auth nyata (JWT).
 - `passwordHash` tidak pernah keluar dari service (select kolom eksplisit).

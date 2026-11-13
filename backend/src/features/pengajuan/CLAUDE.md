@@ -29,8 +29,11 @@ State lanjutan (verified/approved/returned/rejected/paid) di fitur `approval`.
 - `POST   /pengajuan/:id/submit` — submit (hanya dari `draft`), return `{state, anomaly}`.
 - `DELETE /pengajuan/:id`        — hapus + **renumber NBR** se-tahun. Pengaju cuma miliknya; verifikator/approver/admin semua.
 - `GET    /pengajuan/:id/docx`   — metadata docx terbaru + URL R2.
+- `GET    /pengajuan/export.xlsx` — rekap Excel (`export.ts`, writer di `shared/xlsx.ts`): sheet "Pengajuan" (kolom mirip sheet lama "Form responses 1") + "Detail Item". Filter `state/kategori/kodeProyek/from/to`. Pengaju biasa cuma dapet miliknya. **Route ini harus di atas `/pengajuan/:id`.**
+- `POST   /pengajuan/:id/bukti`  — `{keys[]}` dari `POST /uploads`, append ke `pengajuan.bukti_url` (JSON array, maks 20). Boleh di state apa pun selain draft (termasuk `paid`). Pemilik / admin / verifikator. Gak ikut ke docx.
+- `POST   /uploads`              — cuma jpg/png/webp/pdf, maks 10 MB → key `nota/nota_<id>.<ext>`. `GET /uploads/file?key=` cuma terima pola itu (anti traversal).
 
-`pengajuId` selalu diambil dari `getUser(c)` (auth STUB → demo user).
+`pengajuId` diambil dari `getUser(c)` (JWT). PATCH/submit/justify cek pemilik (403 kalau bukan). Submit di-guard `WHERE state='draft'` (double-click → 409). Edit draft membawa flag `monitored` per nama item (items di-replace dengan id baru).
 
 ## Coupling lintas-fitur
 

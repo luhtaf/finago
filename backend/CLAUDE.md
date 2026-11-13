@@ -18,7 +18,7 @@ Hono + Drizzle + libSQL (Turso). Portable: dev Node (`tsx`), deploy CF Workers/P
 - DB: `import { db } from '../../shared/db/client'`, tabel dari `'../../shared/db/schema'`.
 - ID: `import { newId } from '../../shared/util'`.
 - Audit: `import { writeAudit } from '../../shared/audit'` — panggil tiap transisi state.
-- Auth: `import { getUser, requireRole } from '../../shared/auth'` (masih STUB, selalu demo user).
+- Auth: `import { getUser, requireRole } from '../../shared/auth'`. User **cuma** dari JWT valid. `requireAuth` global di `app.ts` → semua route 401 tanpa token (kecuali `/health`, `/auth/login`). **JANGAN** balikin fallback demo user / header `X-User-*` (dulu bikin pengajuan token-expired tercatat atas nama Adinda + bisa spoof role).
 - Total pengajuan **dihitung server** (sum `pengajuan_item.subtotal`) — jangan percaya FE.
 
 ## ⚠️ Warning lintas-fitur (mirror dari ../CLAUDE.md)

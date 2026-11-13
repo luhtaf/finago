@@ -1,0 +1,1 @@
+ALTER TABLE `pengajuan` ADD `bukti_url` text;

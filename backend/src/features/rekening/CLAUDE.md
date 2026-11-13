@@ -34,4 +34,4 @@ Kelola rekening bank user untuk tujuan transfer reimburse. Model **hybrid verify
 
 ## Catatan
 
-- Auth masih STUB (`getUser` balikin demo user dengan semua role) — verify bisa di-test langsung.
+- Auth nyata (JWT). Tes manual: login dulu (`POST /auth/login`), kirim `Authorization: Bearer`.

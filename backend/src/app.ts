@@ -3,6 +3,7 @@ import { logger } from 'hono/logger';
 import { cors } from 'hono/cors';
 import { authRoutes } from './features/auth/routes';
 import { jwtAuth } from './features/auth/middleware';
+import { requireAuth, UnauthenticatedError } from './shared/auth';
 import { pengajuanRoutes } from './features/pengajuan/routes';
 import { approvalRoutes } from './features/approval/routes';
 import { rekeningRoutes } from './features/rekening/routes';
@@ -18,9 +19,16 @@ app.use('*', logger());
 app.use('*', cors({
   origin: '*',
   allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization', 'X-User-Id', 'X-User-Name', 'X-User-Roles'],
+  allowHeaders: ['Content-Type', 'Authorization'],
+  exposeHeaders: ['Content-Disposition'],
 }));
 app.use('*', jwtAuth);
+app.use('*', requireAuth); // wajib login kecuali /health + /auth/login
+app.onError((err, c) => {
+  if (err instanceof UnauthenticatedError) return c.json({ error: 'unauthenticated', message: 'Sesi habis, silakan login lagi' }, 401);
+  console.error(err);
+  return c.json({ error: 'internal_error', message: 'Terjadi kesalahan server' }, 500);
+});
 
 app.get('/health', (c) => c.json({ ok: true, app: 'FINA go', ts: Date.now() }));
 

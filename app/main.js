@@ -70,6 +70,8 @@ document.addEventListener('alpine:init', () => {
   Alpine.data('dashboardView', dashboardView);
 
   window.addEventListener('hashchange', () => { Alpine.store('router').sync(); });
+  // tab idle: begitu token lewat exp → auto logout (gak nunggu request berikutnya)
+  setInterval(() => { if (Alpine.store('session').user && auth.expired()) auth.forceLogout(); }, 60_000);
 });
 
 window.toggleDark = function () {

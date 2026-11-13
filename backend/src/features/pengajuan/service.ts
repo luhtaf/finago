@@ -192,6 +192,12 @@ export async function updateDraft(id: string, input: UpdateDraftInput) {
   }
 
   const { priced, total } = priceItems(input.items);
+  // items di-replace (id baru) → bawa flag `monitored` verifikator by nama item, biar gak ilang
+  const prevMonitored = new Set(
+    (await db.select({ item: pengajuanItem.item, monitored: pengajuanItem.monitored })
+      .from(pengajuanItem).where(eq(pengajuanItem.pengajuanId, id)))
+      .filter((r) => r.monitored).map((r) => r.item.trim().toLowerCase()),
+  );
 
   await db.transaction(async (tx) => {
     await tx
@@ -224,6 +230,7 @@ export async function updateDraft(id: string, input: UpdateDraftInput) {
           harga: it.harga,
           subtotal: it.subtotal,
           remark: it.remark ?? null,
+          monitored: prevMonitored.has(it.item.trim().toLowerCase()),
         })),
       );
     }
@@ -246,7 +253,10 @@ export async function submitPengajuan(id: string) {
     ? 'needs_justification'
     : 'submitted';
 
-  await db.update(pengajuan).set({ state: nextState }).where(eq(pengajuan.id, id));
+  // guard state di WHERE → double-click submit gak dobel outbox event / baris sheet
+  const upd = await db.update(pengajuan).set({ state: nextState })
+    .where(and(eq(pengajuan.id, id), eq(pengajuan.state, 'draft')));
+  if (!upd.rowsAffected) throw new Error('pengajuan sudah di-submit');
 
   // Generate dokumen FORMULIR (stub) → R2 + baris docx_files.
   await generateDocx(id);
@@ -295,4 +305,29 @@ export async function getDocx(pengajuanId: string) {
     .where(eq(docxFiles.pengajuanId, pengajuanId))
     .orderBy(desc(docxFiles.id));
   return rows[0] ?? null;
+}
+
+/** Parse kolom JSON-array key (notaUrl / buktiUrl). Toleran format lama (1 string). */
+export function parseKeys(v: string | null | undefined): string[] {
+  if (!v) return [];
+  try { const a = JSON.parse(v); return Array.isArray(a) ? a.filter((x) => typeof x === 'string') : [v]; }
+  catch { return [v]; }
+}
+
+export const MAX_BUKTI = 20;
+
+/**
+ * Tambah bukti penggunaan dana ke pengajuan yang SUDAH jalan (submitted s/d paid).
+ * Draft pakai form edit biasa (lampiran nota). Append, gak replace. Izin dicek di route.
+ */
+export async function addBukti(id: string, keys: string[], actorId: string) {
+  const header = await db.query.pengajuan.findFirst({ where: eq(pengajuan.id, id) });
+  if (!header) return null;
+  if (header.state === 'draft') throw new Error('Pengajuan masih draft — lampirkan nota lewat form edit');
+  const existing = parseKeys(header.buktiUrl);
+  const merged = [...existing, ...keys.filter((k) => !existing.includes(k))];
+  if (merged.length > MAX_BUKTI) throw new Error(`Maksimal ${MAX_BUKTI} bukti per pengajuan`);
+  await db.update(pengajuan).set({ buktiUrl: JSON.stringify(merged) }).where(eq(pengajuan.id, id));
+  await writeAudit({ entity: 'pengajuan', entityId: id, action: 'add_bukti', actorId, meta: { added: keys.length, state: header.state } });
+  return { buktiKeys: merged };
 }

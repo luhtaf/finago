@@ -8,10 +8,18 @@ function authHeaders() {
   return t ? { Authorization: 'Bearer ' + t } : {};
 }
 
+// Semua request lewat sini: token expired (cek lokal) / 401 dari server → auto logout.
+async function call(path, init = {}) {
+  if (auth.expired()) { auth.forceLogout(); throw new Error('Sesi habis, silakan login lagi'); }
+  const res = await fetch(API_BASE + path, { ...init, headers: { ...(init.headers || {}), ...authHeaders() } });
+  if (res.status === 401) { auth.forceLogout(); throw new Error('Sesi habis, silakan login lagi'); }
+  return res;
+}
+
 async function req(method, path, body) {
-  const res = await fetch(API_BASE + path, {
+  const res = await call(path, {
     method,
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    headers: { 'Content-Type': 'application/json' },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   const text = await res.text();
@@ -28,7 +36,7 @@ export const api = {
   del: (p) => req('DELETE', p),
   // fetch file dengan auth → object URL (buat <img> / link, karena <img> ga bisa kirim header)
   async blobUrl(path) {
-    const res = await fetch(API_BASE + path, { headers: authHeaders() });
+    const res = await call(path);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     return URL.createObjectURL(await res.blob());
   },
@@ -36,14 +44,14 @@ export const api = {
   async upload(path, file) {
     const fd = new FormData();
     fd.append('file', file);
-    const res = await fetch(API_BASE + path, { method: 'POST', headers: authHeaders(), body: fd });
+    const res = await call(path, { method: 'POST', body: fd });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || 'Upload gagal');
+    if (!res.ok) throw new Error(data.message || data.error || 'Upload gagal');
     return data;
   },
   // download file (docx) → trigger browser save
   async download(path, filename) {
-    const res = await fetch(API_BASE + path, { headers: authHeaders() });
+    const res = await call(path);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);

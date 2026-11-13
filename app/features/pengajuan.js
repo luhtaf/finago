@@ -44,6 +44,18 @@ export const pengajuanList = () => ({
     this.$nextTick(() => window.lucide?.createIcons());
   },
   open(id) { location.hash = '#/pengajuan/' + id; },
+  // export Excel: filter yang sama dengan tampilan (status, kategori, rentang tanggal) → server
+  exporting: false,
+  async exportXlsx() {
+    this.exporting = true;
+    try {
+      const q = new URLSearchParams();
+      for (const k of ['state', 'kategori', 'from', 'to']) if (this.filter[k]) q.set(k, this.filter[k]);
+      await api.download('/pengajuan/export.xlsx' + (q.toString() ? '?' + q : ''), `rekap-pengajuan-${today()}.xlsx`);
+      toast('Excel terunduh ✓');
+    } catch (e) { toast(e.message, false); }
+    this.exporting = false;
+  },
 });
 
 // ── FORM (buat / edit draft) ──────────────────────────────────────────
@@ -162,6 +174,7 @@ export const pengajuanForm = () => ({
 // ── DETAIL + aksi approval ────────────────────────────────────────────
 export const pengajuanDetail = () => ({
   p: null, loading: true, busy: false, anomaly: null, justifyText: '', notaUrls: [],
+  buktiUrls: [], buktiUploading: false,
   monitoredAll: [], monitoredListOpen: false,
   rp, fmt, stateLabel, stateCls,
   async init() { await this.load(); },
@@ -190,9 +203,43 @@ export const pengajuanDetail = () => ({
         for (let att = 0; att < 2 && !url; att++) { try { url = await api.blobUrl('/uploads/file?key=' + encodeURIComponent(k)); } catch { url = null; } }
         this.notaUrls.push({ key: k, url, failed: !url });
       }
+      await this.loadBukti();
     } catch (e) { toast(e.message, false); }
     this.loading = false;
     this.$nextTick(() => window.lucide?.createIcons());
+  },
+  // bukti penggunaan dana (terpisah dari nota pengajuan; boleh ditambah walau sudah cair)
+  async loadBukti() {
+    let keys = [];
+    try { const v = JSON.parse(this.p?.buktiUrl || '[]'); keys = Array.isArray(v) ? v : []; } catch { keys = []; }
+    const out = [];
+    for (const k of keys) {
+      const isPdf = /\.pdf$/i.test(k);
+      let url = null;
+      try { url = await api.blobUrl('/uploads/file?key=' + encodeURIComponent(k)); } catch { url = null; }
+      out.push({ key: k, url, isPdf, failed: !url });
+    }
+    this.buktiUrls = out;
+  },
+  get canAddBukti() {
+    return this.p && this.p.state !== 'draft' && (this.isOwner || this.has('admin') || this.has('verifikator'));
+  },
+  async onBuktiChange(e) {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (!files.length) return;
+    const room = 20 - this.buktiUrls.length;
+    if (room <= 0) { toast('Maksimal 20 bukti', false); return; }
+    if (files.length > room) toast(`Cuma ${room} bukti lagi yang muat (maks 20)`, false);
+    this.buktiUploading = true;
+    try {
+      const keys = [];
+      for (const f of files.slice(0, room)) { const r = await api.upload('/uploads', f); keys.push(r.key); }
+      await api.post('/pengajuan/' + this.p.id + '/bukti', { keys });
+      toast(keys.length + ' bukti ditambahkan ✓');
+      await this.load();
+    } catch (err) { toast(err.message, false); }
+    this.buktiUploading = false;
   },
   async retryNota(n) {
     try { n.url = await api.blobUrl('/uploads/file?key=' + encodeURIComponent(n.key)); n.failed = false; this.$nextTick(() => window.lucide?.createIcons()); }

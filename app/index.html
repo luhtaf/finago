@@ -188,9 +188,10 @@
           <h1 class="text-[24px] font-black tracking-tight text-ink dark:text-white">Pengajuan</h1>
           <p class="text-[13px] text-slate-500">Reimburse &amp; purchase request</p>
         </div>
-        <a href="#/buat" class="btn-primary ml-auto px-4 py-2.5 rounded-fld text-[13px] font-bold flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Buat pengajuan</a>
+        <button @click="exportXlsx()" :disabled="exporting" class="ml-auto px-4 py-2.5 rounded-fld border border-line dark:border-white/15 text-[13px] font-bold flex items-center gap-2 disabled:opacity-60" title="Export sesuai filter yang aktif"><i data-lucide="file-spreadsheet" class="w-4 h-4"></i> <span x-text="exporting ? 'Menyiapkan…' : 'Export Excel'"></span></button>
+        <a href="#/buat" class="btn-primary px-4 py-2.5 rounded-fld text-[13px] font-bold flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Buat pengajuan</a>
       </div>
-      <div class="flex gap-2 mb-4">
+      <div class="flex flex-wrap gap-2 mb-4">
         <select x-model="filter.state" @change="load()" class="fld-sm max-w-[180px]">
           <option value="">Semua status</option>
           <option value="draft">Draft</option><option value="submitted">Menunggu verif</option>
@@ -407,6 +408,32 @@
                   <template x-if="n.failed">
                     <button type="button" @click="retryNota(n)" class="rounded-fld border border-dashed border-line dark:border-white/15 aspect-square grid place-items-center text-center text-slate-400 hover:text-brand-500 hover:border-brand-300 gap-1"><i data-lucide="refresh-cw" class="w-4 h-4"></i><span class="text-[10px] font-semibold px-1">Gagal muat<br/>Muat ulang</span></button>
                   </template>
+                </template>
+              </div>
+            </div>
+          </template>
+
+          <!-- bukti penggunaan dana (setelah pengajuan jalan, termasuk sesudah cair) -->
+          <template x-if="canAddBukti || buktiUrls.length">
+            <div class="card p-5 mb-4">
+              <div class="flex items-center gap-2 mb-3">
+                <i data-lucide="receipt" class="w-4 h-4 text-slate-400"></i>
+                <span class="text-[13px] font-bold text-ink dark:text-white">Bukti penggunaan dana</span>
+                <span class="text-[11px] text-slate-400" x-text="buktiUrls.length ? '(' + buktiUrls.length + ')' : ''"></span>
+                <template x-if="canAddBukti">
+                  <label class="ml-auto px-3 py-1.5 rounded-fld border border-line dark:border-white/15 text-[12px] font-bold flex items-center gap-1.5 cursor-pointer hover:bg-line/40 dark:hover:bg-white/5" :class="buktiUploading && 'opacity-60 pointer-events-none'">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i> <span x-text="buktiUploading ? 'Mengunggah…' : 'Tambah bukti'"></span>
+                    <input type="file" accept="image/png,image/jpeg,image/webp,application/pdf" multiple class="hidden" @change="onBuktiChange($event)" />
+                  </label>
+                </template>
+              </div>
+              <template x-if="!buktiUrls.length"><p class="text-[12px] text-slate-400">Belum ada bukti. Unggah foto nota / struk penggunaan dana (JPG/PNG/PDF, maks 10 MB per file).</p></template>
+              <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                <template x-for="b in buktiUrls" :key="b.key">
+                  <a :href="b.url || '#'" target="_blank" rel="noopener" class="block rounded-fld overflow-hidden border border-line dark:border-white/10 aspect-square hover:opacity-90 transition">
+                    <template x-if="b.url && !b.isPdf"><img :src="b.url" class="w-full h-full object-cover" /></template>
+                    <template x-if="b.isPdf || !b.url"><span class="w-full h-full grid place-items-center text-center text-[11px] font-semibold text-slate-400 gap-1"><i :data-lucide="b.url ? 'file-text' : 'image-off'" class="w-5 h-5"></i><span x-text="b.url ? 'PDF' : 'Gagal muat'"></span></span></template>
+                  </a>
                 </template>
               </div>
             </div>

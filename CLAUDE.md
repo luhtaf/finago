@@ -1,127 +1,107 @@
-# CLAUDE.md — FINA go
+# CLAUDE.md
 
-> Instruksi untuk Claude saat sesi baru di repo ini. Baca sebelum mulai apa-apa.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Konteks 30 detik
 
-**FINA go** = app pengajuan reimburse + purchase request internal PT. Karta Bhumi Nusantara. Sister app dari `../new-hydro-canal/` (QC kanal). Brand navy + teal. Stack vanilla + Alpine.js + Tailwind (no build).
+**FINA go** = app pengajuan reimburse + purchase request internal PT. Karta Bhumi Nusantara. Ngegantiin alur manual lama (Google Form → xlsx "Form responses 1" + docx FORMULIR `BR0xx`). Brand navy `#1e2a8e` + teal `#14b8a6`. Bahasa komunikasi: **Indonesia casual**, rekomendasi konkret + tradeoff singkat.
 
-Status: Phase 0 planning. **Belum ada kode produksi, belum ada demo.**
+Status: **LIVE (production)**, dipakai tim Finance. Perubahan = deploy ke user beneran → hati-hati sama skema DB + auth.
 
-## Sebelum kerja apa-apa, baca
+## Layout repo
 
-Urutan baca (kalau dokumen-nya ada):
+| Folder | Isi |
+|---|---|
+| `app/` | FE production — vanilla + Alpine.js + Tailwind CDN, **no build**. Lihat `app/CLAUDE.md`. |
+| `backend/` | API — Hono + Drizzle + libSQL (Turso). Lihat `backend/CLAUDE.md` + `backend/src/features/<fitur>/CLAUDE.md`. |
+| `demo/` | Mockup awal (single-file). **Bukan** production — jangan diedit buat fix bug. |
+| `laporan/` | Laporan perbaikan buat user (dokumen, bukan kode). |
+| `DOMAIN.md`, `FEEDBACK.md`, `PLAN-BE.md`, `DEPLOY.md` | Data model, requirement user, rencana BE, panduan deploy. |
 
-1. `README.md` — overview brand + stack + tujuan
-2. `FEEDBACK.md` — sumber requirement (file user + interview)
-3. `DOMAIN.md` — data model pengajuan + approval + budget
-4. `PLAN.md` — roadmap fase
-5. `PLAN-FE.md` — frontend per page
-6. `PLAN-BE.md` — backend per endpoint
+## Hosting (all-Cloudflare)
 
-Kalau file di atas BELUM ADA → user baru mulai planning, bantu nulis sesuai urutan.
-
-## Pattern dari sister app
-
-Demo HydroCanal di `../new-hydro-canal/demo/` adalah **reference design**. Reuse pattern-nya:
-
-| Pattern | File reference | Kapan dipakai di FINA go |
-|---|---|---|
-| Single-file SPA (HTML + CSS + JS terpisah) | `demo/index.html`, `app.js`, `style.css` | Selalu — struktur dasar demo |
-| Hash routing | `demo/app.js` (function `route()`) | Multi-page navigation |
-| Template `<template id="view-*">` | `demo/index.html` | Per page |
-| Dark mode toggle | `demo/style.css` section "DARK MODE" | Selalu |
-| ⌘K command palette | `demo/app.js` (CMD_ITEMS array) | Production-feel |
-| Role pill switcher | `demo/app.js` (`applyRole`, `setRole`) | Karena ada banyak role di FINA go |
-| Toast notifications | `demo/app.js` (function `toast`) | Selalu |
-| Confirmation modal | `demo/app.js` (`confirmDialog`) | Destructive actions |
-| Walkthrough tour | `demo/app.js` (TOUR_STEPS) | Onboarding |
-| Status badge dot dengan pulse | `demo/style.css` (`.badge-dot`) | Status pengajuan |
-
-**Filosofi**: jangan reinvent. Copy struktur, swap konten + warna.
-
-## Brand swap
-
-HydroCanal pakai sky `#0284c7`. FINA go pakai navy `#1e2a8e` + teal `#14b8a6`. Refactor pattern:
-
-```js
-// Di tailwind.config (di index.html)
-colors: {
-  brand: { 500: '#1e2a8e', 600: '#1a247a', 700: '#152066' /* navy */ },
-  accent: { 500: '#14b8a6', 600: '#0d9488' /* teal */ },
-}
+```
+FE  app/      → Cloudflare Pages, project "finago"  → https://finago-3r7.pages.dev (pakai URL utama, bukan <hash>.…)
+API backend/  → Cloudflare Workers "finago-api"     (entry src/worker.ts, URL di window.FG_API di app/index.html)
+DB            → Turso (libSQL)    — kredensial di backend/.env (gitignored)
+Storage       → Cloudflare R2 bucket "finago" via binding BUCKET (gak pakai access key di Workers)
+Cron          → Workers Cron Trigger */5 → sync outbox (no-op selama SYNC_PROVIDER=none)
 ```
 
-Logo: `brand/finago-logo.png` — dipakai di splash + login + top nav (mini).
+Render / Docker masih didukung (`src/index.ts`, `npm run start`) tapi **tidak dipakai** sekarang. `DEPLOY.md` bagian Render = alternatif.
 
-## Data model nyata (dari file contoh — sudah di-mock, BOLEH dibaca)
+## Commands
 
-File contoh ada di parent dir `../` (bukan di repo): `BR001_*.docx` + `Salinan dari Pengajuan*.xlsx`. Sudah di-mock Fathul (row 1–2 + sheet Detail diubah), aman dibaca. Cara baca: unzip XML (lihat git log / minta Claude extract), jangan butuh tool eksternal.
+Semua dari `backend/`:
 
-**Sumber kebenaran data hari ini (manual, mau digantikan FINA go):**
+```bash
+npm run dev            # API lokal Node (tsx watch) → http://localhost:8787, DB default file:./local.db, storage .r2-store/
+npm run typecheck      # tsc --noEmit — satu-satunya "test" otomatis; WAJIB lolos sebelum deploy
+npm run db:generate    # bikin migrasi dari schema.ts (drizzle-kit; bisa interaktif kalau ada rename)
+npm run seed           # seed project/user/rekening — lihat ⚠️ seed di bawah
+npm run docx:sample    # generate contoh FORMULIR .docx
+npx wrangler deploy --dry-run --outdir /tmp/x   # cek bundle Workers tanpa deploy
+```
 
-1. **xlsx sheet "Form responses 1"** = master log pengajuan. 1 row = 1 pengajuan. Kolom penting:
-   `Tanggal | Kode Unik (proyek) | Status (Urgent/Not Urgent) | Nama Pengaju | Kategori (Reimbursement | Pengajuan Baru) | Nama Pengajuan | Total Pengajuan | Upload Nota | Nomor Rekening | NBR (BR001…) | Approval | Document Studio file link`
-   ⚠️ Masalah lama: rincian item di-mash jadi free-text di `Nama Pengajuan` (`"1. Konsumsi Rp 1jt\n2. BBM Rp 1jt…"`) → susah dihitung & diaudit.
-2. **xlsx sheet "Detail Item"** = breakdown per item: `NBR | Item | Jumlah | Satuan | Harga`. **Ini struktur target form** (line-item, bukan free-text).
-3. **xlsx sheet "REKAP COP"** = master kode proyek: `PRO001` = APP Group QC Canal OKI, `BIM001` = Grand Makarti Jaksel, dll. Kode Unik di pengajuan refer ke sini.
-4. **`BR001_*.docx`** = **template OUTPUT**. `FORMULIR Reimbursement`, tabel `No | Rincian Anggaran | Kuantitas | Sat. | Jumlah | Remark`, `TOTAL Rp…`, `Dikirim ke Rekening`, `Prepared & Requested by` / `Approved by`.
+Gak ada test suite / linter. Verifikasi = `typecheck` + dry-run bundle + smoke test `curl` ke server lokal (login dulu `POST /auth/login`, lalu `Authorization: Bearer`).
 
-**Requirement inti (Fathul, 2026-06-13):** ganti alur lama → **satu form dengan line-item table (mirip sheet "Detail Item")** → **auto-sum Total** → **generate docx FORMULIR** sebagai output. NBR (nomor dokumen BR0xx) auto-increment. Mockup dulu sebelum wiring backend.
+**Deploy** (outward-facing, konfirmasi user dulu):
+1. Skema berubah → `npm run db:generate`, lalu migrate ke Turso: `set -a; source .env; set +a; npm run db:migrate`.
+2. API: `npm run cf:deploy`.
+3. FE: dari root, `npx wrangler pages deploy app --project-name finago --commit-dirty=true`.
+
+⚠️ `drizzle.config.ts` + `.env` nunjuk **Turso prod**. Buat migrate/seed lokal override eksplisit: `env -u DATABASE_AUTH_TOKEN DATABASE_URL=file:./local.db npm run db:migrate`.
+
+⚠️ FE lokal: `app/index.html` hardcode `window.FG_API` = Worker prod, dan itu menang atas `localStorage.fg_api`. Mau FE lokal nembak API lokal → kosongin `FG_API` sementara (jangan ke-commit).
+
+## Arsitektur yang perlu baca banyak file buat ngerti
+
+- **Runtime ganda, satu app**: `backend/src/app.ts` (Hono, runtime-agnostic) dipakai `index.ts` (Node) dan `worker.ts` (Workers). Di Workers: env baru ada pas request → `worker.ts` `bridgeEnv(env)` nyalin ke `process.env`; db client (`shared/db/client.ts`) lazy via Proxy; `aws-sdk`/`node:fs` di-import dinamis. **Jangan** baca env / bikin client di top-level module.
+- **Auth**: login email+password → JWT HS256 (7 hari, payload `{sub,nama,roles}`). `jwtAuth` set `c.get('user')`, `requireAuth` global → 401 tanpa token valid (kecuali `/health`, `/auth/login`), `requireRole(...)` per route. FE (`app/lib/auth.js` + `api.js`) auto-logout kalau token expired atau server balas 401. Prod tanpa `JWT_SECRET` = fail closed.
+- **Alur state pengajuan**: `draft → submitted | needs_justification → verified → approved → paid`, cabang `returned` (balik ke draft saat diedit) / `rejected`, `reopen` balikin ke `prevState`. Transisi draft/submit/justify di `features/pengajuan/service.ts`; sisanya di `features/approval/service.ts`. Tiap transisi `writeAudit`.
+- **NBR** `BR<seq3><tahun>` = posisi dalam tahun; delete pengajuan **merenumber** NBR lain se-tahun (batch tunggal — Workers punya limit subrequest, jangan pakai transaksi interaktif per-baris).
+- **Lampiran**: `POST /uploads` → key `nota/nota_<id>.<ext>` di R2. `pengajuan.nota_url` (nota saat pengajuan, ikut di-embed ke docx) dan `pengajuan.bukti_url` (bukti penggunaan dana, ditambah setelah jalan/cair) sama-sama JSON array of key. FE nampilin lewat `api.blobUrl('/uploads/file?key=')` karena `<img>` gak bisa kirim header auth.
+- **Output**: docx FORMULIR (`features/pengajuan/docx.ts`, library `docx`) + export rekap `.xlsx` (`features/pengajuan/export.ts` + `shared/xlsx.ts`, writer minimal di atas `jszip`).
 
 ## Konvensi struktur kode (feature-based) + aturan WARNING
 
 Arsitektur: **vertical slice / feature-based**, bukan layer-based (jangan misah global `controllers/` `models/`).
 
-- `backend/features/<fitur>/` — semua file fitur ngumpul (routes, model, service, docx, dll). Subfitur = subfolder di dalamnya.
-- Tiap folder fitur punya **`CLAUDE.md` sendiri** — nyeritain fitur itu lengkap (tabel, job/cron, endpoint) biar context AI ringan walau codebase gede.
-- FE sama polanya: `features/<fitur>/` pas keluar dari fase demo single-file (vanilla no-build tetep bisa via ES module `<script type=module>`).
-- **Jangan paksa ceremony**: fitur kecil cukup 1 file. Split controller/model/service PAS udah gede, bukan di depan.
-- `backend/shared/` — db client (Drizzle), graph client, r2, auth.
-- Domain baru yang beneran beda → **repo lain** (polyrepo), bukan dijejelin ke sini.
+- `backend/src/features/<fitur>/` — semua file fitur ngumpul (routes, service, docx, export…). Tiap folder fitur punya **`CLAUDE.md` sendiri** — update kalau nambah endpoint/tabel.
+- FE: `app/features/<fitur>.js` = 1 factory Alpine per view.
+- **Jangan paksa ceremony**: fitur kecil cukup 1 file. Split pas udah gede.
+- `backend/src/shared/` — db (Drizzle), auth, r2, sync provider, xlsx, audit.
+- Domain baru yang beneran beda → **repo lain** (polyrepo).
 
-**Hierarki guardrail (penting):** CLAUDE.md utama ini = **guardrail GLOBAL**, berlaku ke semua fitur dan **gak bisa di-override / di-ignore** oleh CLAUDE.md fitur. CLAUDE.md per fitur cuma boleh **nambah aturan yang lebih ketat** buat fitur itu — gak boleh ngelonggarin yang global. Kalau konflik → **global menang**.
+**Hierarki guardrail:** CLAUDE.md utama ini = **guardrail GLOBAL**, gak bisa di-override oleh CLAUDE.md fitur. CLAUDE.md fitur cuma boleh **nambah aturan lebih ketat**. Konflik → global menang.
 
-**ATURAN WARNING (wajib, biar gak ke-miss):** semua warning lintas-fitur WAJIB ditulis di **CLAUDE.md UTAMA ini** (boleh double dengan CLAUDE.md fitur). Yang wajib naik ke sini: kupling antar-fitur, job/cron, dan flow nyambung. Tulis nunjuk **benda verifiable** (nama tabel / event / cron), bukan deskripsi implementasi (biar gak drift).
+**ATURAN WARNING (wajib):** semua warning lintas-fitur WAJIB ditulis di sini (boleh double dengan CLAUDE.md fitur): kupling antar-fitur, job/cron, flow nyambung. Tunjuk **benda verifiable** (nama tabel / event / cron / route), bukan deskripsi implementasi.
 
 ### ⚠️ Warning lintas-fitur aktif
-Direncanakan di `PLAN-BE.md` (jadi wajib dipatuhi pas implementasi):
-- `pengajuan` ⇄ `sync-onedrive`: ubah skema tabel `pengajuan`/`pengajuan_item` → cek mapping kolom di consumer sync + Workbook API.
-- `sync-onedrive`: ada **cron** baca tabel `outbox_events` → Graph API. Jangan ubah `type`/`payload` event tanpa update consumer. Idempotent pakai `nbr`.
-- `monitored-items` itu **flag boolean sederhana** `pengajuan_item.monitored` (bukan master/interval/fuzzy). Verifikator toggle on/off lewat `POST /pengajuan-items/:itemId/monitor {on}`. `GET /monitored-items` = daftar item ber-flag (lintas pengajuan). `checkAnomaly` masih ada (dipakai submit) tapi gak auto-flag.
-- ⚠️ Migrasi belum bersih: kolom `pengajuan_item.monitored` ditambah manual (ALTER) ke `local.db`; `monitored_item_id` + tabel `monitored_items` jadi **dead** (sisa model lama). TODO: regen `drizzle/` dari nol pas skema stabil.
-- `pengajuan.total` di-hitung & di-store di service (sum `pengajuan_item.subtotal`) — jangan percaya angka dari FE.
 
-## Yang belum jelas — tanya user
+- `pengajuan` ⇄ `sync-onedrive`: ubah skema tabel `pengajuan`/`pengajuan_item` → cek mapping kolom di `sync-onedrive/consumer.ts` + provider (Sheets/Workbook).
+- `sync-onedrive`: **cron** (`wrangler.toml [triggers]`) baca tabel `outbox_events` → provider. Jangan ubah `type` (`sync_pengajuan`, `upload_docx`) / `payload` tanpa update consumer. Idempotent pakai `nbr` — padahal delete me-renumber `nbr` (lihat Masalah terbuka).
+- `monitored-items` = flag boolean `pengajuan_item.monitored`, toggle via `POST /pengajuan-items/:itemId/monitor {on}`. `GET /monitored-items` = item ber-flag lintas pengajuan. `PATCH /pengajuan/:id` me-replace item (id baru) dan **membawa flag by nama item** — jangan hapus logika itu.
+- Migrasi: kolom `monitored_item_id` + tabel `monitored_items` = **dead** (sisa model lama). TODO regen `drizzle/` pas skema stabil.
+- `pengajuan.total` dihitung & di-store di service (sum `pengajuan_item.subtotal`) — jangan percaya angka dari FE.
+- `pengajuan.bukti_url` (migrasi `0004_bukti_url`) dipakai `POST /pengajuan/:id/bukti`, detail FE, dan kolom "Jml Bukti" di export xlsx. Belum ikut ke docx / sync.
+- Kolom export xlsx (`features/pengajuan/export.ts`) dipakai Finance sebagai pengganti sheet lama — ubah urutan/nama kolom = kabarin user.
+- ⚠️ `backend/src/shared/db/seed.ts` `onConflictDoUpdate` **reset password** user yang ada ke `fina123`. Jangan jalanin seed ke Turso prod. Nambah user prod = `POST /users` di API live (login admin).
 
-Saat user request demo / planning, klarifikasi dulu:
+## Masalah terbuka (dari code review 2026-11-13, belum di-fix — butuh keputusan user)
 
-1. **Role hierarchy**: berapa level? (mis. Karyawan → Manager → Finance → Director, atau cukup 3 level?)
-2. **Approval rule by amount**: apakah > X jt = wajib director? Configurable per nominal?
-3. **Budget categories**: ada kah master kategori (BBM, makan dinas, alat, software, dll)?
-4. **Attachment requirement**: receipt wajib untuk reimburse? Quotation untuk purchase?
-5. **Notifikasi**: push notif/email saat status berubah?
-6. **Integrasi accounting**: perlu export untuk SAP/sistem accounting? Atau standalone?
+- **Renumber NBR saat delete** bikin `docx_files.r2_key` (`pengajuan/<NBR>.docx`) + file/baris sync nunjuk NBR lama → objek R2 bisa ketimpa pengajuan baru dengan nomor yang sama. Opsi: stop renumber (soft-delete / void) atau key docx pakai `id`.
+- **Gak ada separation of duties**: satu orang (mis. akun dengan role pengaju+verifikator+approver) bisa verify + approve pengajuan sendiri.
+- **Visibilitas**: `GET /pengajuan`, `/pengajuan/:id`, `/uploads/file` bisa dibaca semua user login (termasuk no. rekening & nota orang lain). `bankAccountId` gak dicek milik pengaju.
+- **Race `nextNbr`**: create bersamaan bisa dapet NBR sama → 500 unique. Ganti tahun di edit gak ganti NBR.
+
+## Data contoh (di `../`, di luar repo)
+
+`../BR001_*.docx` (template output FORMULIR) + `../Salinan dari Pengajuan*.xlsx` (sheet "Form responses 1", "Detail Item", "REKAP COP") — sudah di-mock, **boleh dibaca** (unzip XML). **Jangan di-commit** (`.gitignore` sudah nge-block `*.docx`/`*.xlsx`).
 
 ## Jangan dilakukan
 
-- ⚠️ File `BR001_*.docx` + `Salinan dari Pengajuan*.xlsx` (di `../`) sekarang **sudah di-mock & boleh dibaca** (lihat section "Data model nyata"). Tetap jangan commit file-nya ke repo — sensitive-format, simpan di luar tracking.
-- ❌ Jangan campur konteks dengan `../new-hydro-canal/`. Kalau user nanya tentang HydroCanal, ingatkan untuk pindah sesi ke folder itu.
-- ❌ Jangan langsung scaffold React. Stack target adalah vanilla + Alpine.
-
-## Filosofi (sama dengan HydroCanal)
-
-- Bahasa Indonesia casual untuk komunikasi
-- Rekomendasi konkret + tradeoff singkat, bukan jawaban hedge
-- Demo dulu sebelum production
-- AI-context-aware: docs di-split per concern
-- Polyrepo: standalone repo, pattern dari sister app boleh di-reuse
-
-## Resume sesi
-
-Kalau sesi baru:
-
-1. Cek dokumen di list "Sebelum kerja apa-apa" → ada apa, belum ada apa
-2. Tanya user: mau lanjutin dari mana? (planning, demo build, refactor demo, dll)
-3. Kalau planning → bantu nulis file selanjutnya sesuai urutan
-4. Kalau demo build → mulai dari `demo/index.html` + `app.js` + `style.css`, copy pattern dari `../new-hydro-canal/demo/`
+- ❌ Campur konteks dengan `../new-hydro-canal/` (sister app, reference design). Pertanyaan HydroCanal → minta pindah sesi.
+- ❌ Scaffold React / build step di FE. Stack = vanilla + Alpine.
+- ❌ Fallback "demo user" atau trust header `X-User-*` di auth.
+- ❌ Deploy / migrate prod / seed prod tanpa konfirmasi user.

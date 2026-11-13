@@ -51,6 +51,9 @@ export const pengajuan = sqliteTable('pengajuan', {
   // Daftar tujuan pencairan (bisa >1, bisa ad-hoc). JSON: [{bankName, number, holderName}].
   rekeningList: text('rekening_list', { mode: 'json' }).$type<{ bankName: string; number: string; holderName: string }[]>(),
   notaUrl: text('nota_url'),
+  // Bukti penggunaan dana (diunggah pengaju SETELAH pengajuan jalan, termasuk sesudah cair).
+  // JSON string array of storage keys, sama formatnya dengan notaUrl. Gak ikut ke docx.
+  buktiUrl: text('bukti_url'),
   // Nama penandatangan (snapshot saat aksi) → dipakai di docx kolom Reviewed/Approved by.
   reviewedBy: text('reviewed_by'),
   approvedBy: text('approved_by'),

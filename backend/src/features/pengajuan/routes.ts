@@ -4,6 +4,7 @@ import { getUser } from '../../shared/auth';
 import { r2 } from '../../shared/r2/client';
 import { newId } from '../../shared/util';
 import { generateDocx } from './docx';
+import { exportPengajuanXlsx } from './export';
 import {
   createPengajuan,
   getPengajuan,
@@ -14,9 +15,17 @@ import {
   getDocx,
   deletePengajuan,
   getPengajuanOwner,
+  addBukti,
 } from './service';
 
 export const pengajuanRoutes = new Hono();
+
+/** Edit/submit/justify cuma boleh pemilik pengajuan. null = not found, false = bukan pemilik. */
+async function ownedBy(id: string, userId: string): Promise<boolean | null> {
+  const owner = await getPengajuanOwner(id);
+  return owner === null ? null : owner === userId;
+}
+const NOT_OWNER = { error: 'forbidden', message: 'Cuma pengaju yang bisa mengubah pengajuan ini' };
 
 const itemSchema = z.object({
   item: z.string().min(1),
@@ -56,14 +65,20 @@ const updateSchema = z.object({
   items: z.array(itemSchema).min(1),
 });
 
-// POST /uploads — upload nota/bukti (multipart, field "file") → simpan storage, balikin key
+// POST /uploads — upload nota/bukti (multipart, field "file") → simpan storage, balikin key.
+// Cuma gambar/PDF, maks 10 MB (Workers request body limit juga ~100 MB, jangan sampai sana).
+const UPLOAD_EXT = new Set(['png', 'jpg', 'jpeg', 'webp', 'pdf']);
+const MAX_UPLOAD = 10 * 1024 * 1024;
 pengajuanRoutes.post('/uploads', async (c) => {
   const body = await c.req.parseBody();
   const file = body['file'];
   if (!file || typeof file === 'string') return c.json({ error: 'file wajib' }, 400);
-  const f = file as { arrayBuffer(): Promise<ArrayBuffer>; name?: string };
+  const f = file as { arrayBuffer(): Promise<ArrayBuffer>; name?: string; size?: number };
+  const ext = ((f.name || '').split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (!UPLOAD_EXT.has(ext)) return c.json({ error: 'invalid_file', message: 'Format harus JPG/PNG/WEBP/PDF' }, 400);
+  if ((f.size ?? 0) > MAX_UPLOAD) return c.json({ error: 'too_large', message: 'Ukuran file maks 10 MB' }, 413);
   const buf = new Uint8Array(await f.arrayBuffer());
-  const ext = ((f.name || '').split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '') || 'bin';
+  if (buf.byteLength > MAX_UPLOAD) return c.json({ error: 'too_large', message: 'Ukuran file maks 10 MB' }, 413);
   const key = `nota/${newId('nota')}.${ext}`;
   await r2.put(key, buf);
   return c.json({ key, url: r2.getUrl(key) });
@@ -73,6 +88,8 @@ pengajuanRoutes.post('/uploads', async (c) => {
 pengajuanRoutes.get('/uploads/file', async (c) => {
   const key = c.req.query('key');
   if (!key) return c.json({ error: 'key wajib' }, 400);
+  // cuma folder lampiran; tolak traversal (mode FS lokal) + akses ke docx/ dll
+  if (!/^nota\/[A-Za-z0-9_-]+\.[a-z0-9]+$/.test(key)) return c.json({ error: 'invalid_key' }, 400);
   const bytes = await r2.get(key);
   if (!bytes) return c.json({ error: 'not_found' }, 404);
   const ext = (key.split('.').pop() || '').toLowerCase();
@@ -105,6 +122,27 @@ pengajuanRoutes.get('/pengajuan', async (c) => {
   return c.json(rows);
 });
 
+// GET /pengajuan/export.xlsx — rekap Excel (sheet Pengajuan + Detail Item), filter sama
+// dengan list (+ from/to tanggal). Pengaju biasa cuma dapet pengajuan miliknya.
+// ⚠️ HARUS didaftarkan SEBELUM '/pengajuan/:id' biar gak ketangkep sebagai id.
+pengajuanRoutes.get('/pengajuan/export.xlsx', async (c) => {
+  const u = getUser(c);
+  const q = c.req.query();
+  const isoDate = (v?: string) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined);
+  const privileged = (['verifikator', 'approver', 'admin'] as const).some((r) => u.roles.includes(r));
+  const bytes = await exportPengajuanXlsx({
+    kategori: q.kategori || undefined, state: q.state || undefined, kodeProyek: q.kodeProyek || undefined,
+    from: isoDate(q.from), to: isoDate(q.to), pengajuId: privileged ? undefined : u.id,
+  });
+  const stamp = new Date().toISOString().slice(0, 10);
+  return new Response(bytes as unknown as ArrayBuffer, {
+    headers: {
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': `attachment; filename="rekap-pengajuan-${stamp}.xlsx"`,
+    },
+  });
+});
+
 // GET /pengajuan/:id — header + items
 pengajuanRoutes.get('/pengajuan/:id', async (c) => {
   const found = await getPengajuan(c.req.param('id'));
@@ -127,6 +165,29 @@ pengajuanRoutes.delete('/pengajuan/:id', async (c) => {
   return c.json({ ok: true, deleted: res.nbr });
 });
 
+// POST /pengajuan/:id/bukti — tambah bukti penggunaan dana (boleh walau sudah cair).
+// body { keys: string[] } hasil POST /uploads. Pemilik atau admin/verifikator.
+const buktiSchema = z.object({ keys: z.array(z.string().regex(/^nota\/[A-Za-z0-9_-]+\.[a-z0-9]+$/)).min(1).max(20) });
+pengajuanRoutes.post('/pengajuan/:id/bukti', async (c) => {
+  const parsed = buktiSchema.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) return c.json({ error: 'invalid_body', issues: parsed.error.flatten() }, 400);
+  const u = getUser(c);
+  const id = c.req.param('id')!;
+  const owner = await getPengajuanOwner(id);
+  if (owner === null) return c.json({ error: 'not_found' }, 404);
+  const privileged = u.roles.includes('admin') || u.roles.includes('verifikator');
+  if (owner !== u.id && !privileged) {
+    return c.json({ error: 'forbidden', message: 'Cuma pengaju yang bisa nambah bukti' }, 403);
+  }
+  try {
+    const res = await addBukti(id, parsed.data.keys, u.id);
+    if (!res) return c.json({ error: 'not_found' }, 404);
+    return c.json(res);
+  } catch (e) {
+    return c.json({ error: 'conflict', message: (e as Error).message }, 409);
+  }
+});
+
 // PATCH /pengajuan/:id — edit draft (replace items, recompute total)
 pengajuanRoutes.patch('/pengajuan/:id', async (c) => {
   const body = await c.req.json().catch(() => null);
@@ -134,6 +195,9 @@ pengajuanRoutes.patch('/pengajuan/:id', async (c) => {
   if (!parsed.success) {
     return c.json({ error: 'invalid_body', issues: parsed.error.flatten() }, 400);
   }
+  const own = await ownedBy(c.req.param('id'), getUser(c).id);
+  if (own === null) return c.json({ error: 'not_found' }, 404);
+  if (!own) return c.json(NOT_OWNER, 403);
   try {
     const updated = await updateDraft(c.req.param('id'), parsed.data);
     if (!updated) return c.json({ error: 'not_found' }, 404);
@@ -145,6 +209,9 @@ pengajuanRoutes.patch('/pengajuan/:id', async (c) => {
 
 // POST /pengajuan/:id/submit — submit draft (cek anomali, generate docx, outbox)
 pengajuanRoutes.post('/pengajuan/:id/submit', async (c) => {
+  const own = await ownedBy(c.req.param('id'), getUser(c).id);
+  if (own === null) return c.json({ error: 'not_found' }, 404);
+  if (!own) return c.json(NOT_OWNER, 403);
   try {
     const result = await submitPengajuan(c.req.param('id'));
     if (!result) return c.json({ error: 'not_found' }, 404);
@@ -159,6 +226,9 @@ pengajuanRoutes.post('/pengajuan/:id/justify', async (c) => {
   const body = await c.req.json().catch(() => null);
   const alasan = typeof body?.alasan === 'string' ? body.alasan.trim() : '';
   if (!alasan) return c.json({ error: 'invalid_body', message: 'alasan wajib' }, 400);
+  const own = await ownedBy(c.req.param('id')!, getUser(c).id);
+  if (own === null) return c.json({ error: 'not_found' }, 404);
+  if (!own) return c.json(NOT_OWNER, 403);
   try {
     const result = await justifyPengajuan(c.req.param('id')!, getUser(c).id, alasan);
     if (!result) return c.json({ error: 'not_found' }, 404);

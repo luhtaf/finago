@@ -3,8 +3,13 @@ import { verify } from 'hono/jwt';
 import type { Role } from '../../shared/db/schema';
 
 // ⚠️ Baca env pas dipakai (bukan module-load) — biar di Workers ke-baca secret yang benar.
+// Prod (NODE_ENV=production, di-set di wrangler.toml [vars]) WAJIB punya JWT_SECRET —
+// jangan fallback ke secret dev yang ada di repo (token bisa dipalsukan).
 export function jwtSecret(): string {
-  return process.env.JWT_SECRET ?? 'dev-secret-fina-go-change-me';
+  const s = process.env.JWT_SECRET;
+  if (s) return s;
+  if (process.env.NODE_ENV === 'production') throw new Error('JWT_SECRET belum di-set');
+  return 'dev-secret-fina-go-change-me';
 }
 
 // Baca Bearer token kalau ada → set c.get('user'). Gak nge-block (route publik tetap jalan);
