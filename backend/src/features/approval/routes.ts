@@ -35,7 +35,7 @@ function mapError(c: Context, err: unknown) {
 }
 
 // GET /approvals/pending — antrian aksi approval.
-approvalRoutes.get('/approvals/pending', async (c) => {
+approvalRoutes.get('/approvals/pending', requireRole('verifikator', 'approver', 'admin'), async (c) => {
   const items = await listPending();
   return c.json({ items });
 });

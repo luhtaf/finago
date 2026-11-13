@@ -48,7 +48,9 @@ State lanjutan (verified/approved/returned/rejected/paid) di fitur `approval`.
 
 ## Catatan / TODO
 
-- **NBR = posisi-dalam-tahun** (`BR<seq3><tahun>`, mis. `BR0012026`). `nextNbr(year)`
-  = jumlah pengajuan tahun itu + 1. **`DELETE` memicu `renumberYear`** (2-fase, pakai
-  `TMP-<id>` dulu) biar nomor rapat lagi → NBR pengajuan lain BISA berubah saat ada delete.
-- **NBR race**: create concurrent rawan duplikat (unique `nbr`). TODO: retry-on-unique.
+- **NBR** (`BR<seq3><tahun>`, mis. `BR0012026`). `nextNbr(year)` = MAX seq tahun itu + 1;
+  create retry s/d 5x kalau kena unique `nbr` (create paralel). **`DELETE` + ganti tahun di
+  draft memicu `renumberStmts`** (2-fase `TMP-<id>` → final, 1 `db.batch`) → NBR pengajuan
+  lain BISA berubah. Makanya docx di R2 di-key `pengajuan/<id>.docx`, bukan NBR.
+- **Visibilitas**: pengaju biasa cuma liat miliknya (list, detail, docx, export, lampiran);
+  verifikator/approver/admin semua. `bankAccountId` dicek milik pengaju (400 `invalid_rekening`).

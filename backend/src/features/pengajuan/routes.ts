@@ -1,4 +1,4 @@
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { z } from 'zod';
 import { getUser } from '../../shared/auth';
 import { r2 } from '../../shared/r2/client';
@@ -16,6 +16,8 @@ import {
   deletePengajuan,
   getPengajuanOwner,
   addBukti,
+  bankAccountOwnedBy,
+  attachmentOwnedBy,
 } from './service';
 
 export const pengajuanRoutes = new Hono();
@@ -26,6 +28,20 @@ async function ownedBy(id: string, userId: string): Promise<boolean | null> {
   return owner === null ? null : owner === userId;
 }
 const NOT_OWNER = { error: 'forbidden', message: 'Cuma pengaju yang bisa mengubah pengajuan ini' };
+
+// Visibilitas: verifikator/approver/admin lihat semua; pengaju biasa cuma miliknya
+// (pengajuan, docx, lampiran — isinya no. rekening & nota orang lain).
+const canViewAll = (u: { roles: string[] }) => ['verifikator', 'approver', 'admin'].some((r) => u.roles.includes(r));
+/** 'ok' | 'not_found' | 'forbidden' */
+async function viewAccess(c: Context, id: string) {
+  const u = getUser(c);
+  const owner = await getPengajuanOwner(id);
+  if (owner === null) return 'not_found' as const;
+  return canViewAll(u) || owner === u.id ? ('ok' as const) : ('forbidden' as const);
+}
+const denyView = (c: Context, r: 'not_found' | 'forbidden') =>
+  r === 'not_found' ? c.json({ error: 'not_found' }, 404) : c.json({ error: 'forbidden', message: 'Bukan pengajuan kamu' }, 403);
+const BAD_REKENING = { error: 'invalid_rekening', message: 'Rekening tersimpan itu bukan milikmu' };
 
 const itemSchema = z.object({
   item: z.string().min(1),
@@ -90,6 +106,8 @@ pengajuanRoutes.get('/uploads/file', async (c) => {
   if (!key) return c.json({ error: 'key wajib' }, 400);
   // cuma folder lampiran; tolak traversal (mode FS lokal) + akses ke docx/ dll
   if (!/^nota\/[A-Za-z0-9_-]+\.[a-z0-9]+$/.test(key)) return c.json({ error: 'invalid_key' }, 400);
+  const u = getUser(c);
+  if (!canViewAll(u) && !(await attachmentOwnedBy(key, u.id))) return c.json({ error: 'forbidden' }, 403);
   const bytes = await r2.get(key);
   if (!bytes) return c.json({ error: 'not_found' }, 404);
   const ext = (key.split('.').pop() || '').toLowerCase();
@@ -111,6 +129,7 @@ pengajuanRoutes.post('/pengajuan', async (c) => {
     return c.json({ error: 'invalid_body', issues: parsed.error.flatten() }, 400);
   }
   const user = getUser(c);
+  if (parsed.data.bankAccountId && !(await bankAccountOwnedBy(parsed.data.bankAccountId, user.id))) return c.json(BAD_REKENING, 400);
   const result = await createPengajuan(parsed.data, user.id);
   return c.json(result, 201);
 });
@@ -118,7 +137,8 @@ pengajuanRoutes.post('/pengajuan', async (c) => {
 // GET /pengajuan — list dengan filter opsional (kategori, state, kodeProyek)
 pengajuanRoutes.get('/pengajuan', async (c) => {
   const { kategori, state, kodeProyek } = c.req.query();
-  const rows = await listPengajuan({ kategori: kategori as never, state, kodeProyek });
+  const u = getUser(c);
+  const rows = await listPengajuan({ kategori: kategori as never, state, kodeProyek, pengajuId: canViewAll(u) ? undefined : u.id });
   return c.json(rows);
 });
 
@@ -129,7 +149,7 @@ pengajuanRoutes.get('/pengajuan/export.xlsx', async (c) => {
   const u = getUser(c);
   const q = c.req.query();
   const isoDate = (v?: string) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined);
-  const privileged = (['verifikator', 'approver', 'admin'] as const).some((r) => u.roles.includes(r));
+  const privileged = canViewAll(u);
   const bytes = await exportPengajuanXlsx({
     kategori: q.kategori || undefined, state: q.state || undefined, kodeProyek: q.kodeProyek || undefined,
     from: isoDate(q.from), to: isoDate(q.to), pengajuId: privileged ? undefined : u.id,
@@ -145,6 +165,8 @@ pengajuanRoutes.get('/pengajuan/export.xlsx', async (c) => {
 
 // GET /pengajuan/:id — header + items
 pengajuanRoutes.get('/pengajuan/:id', async (c) => {
+  const acc = await viewAccess(c, c.req.param('id'));
+  if (acc !== 'ok') return denyView(c, acc);
   const found = await getPengajuan(c.req.param('id'));
   if (!found) return c.json({ error: 'not_found' }, 404);
   return c.json(found);
@@ -198,6 +220,7 @@ pengajuanRoutes.patch('/pengajuan/:id', async (c) => {
   const own = await ownedBy(c.req.param('id'), getUser(c).id);
   if (own === null) return c.json({ error: 'not_found' }, 404);
   if (!own) return c.json(NOT_OWNER, 403);
+  if (parsed.data.bankAccountId && !(await bankAccountOwnedBy(parsed.data.bankAccountId, getUser(c).id))) return c.json(BAD_REKENING, 400);
   try {
     const updated = await updateDraft(c.req.param('id'), parsed.data);
     if (!updated) return c.json({ error: 'not_found' }, 404);
@@ -240,6 +263,8 @@ pengajuanRoutes.post('/pengajuan/:id/justify', async (c) => {
 
 // GET /pengajuan/:id/docx — metadata docx terbaru + signed/public URL R2
 pengajuanRoutes.get('/pengajuan/:id/docx', async (c) => {
+  const acc = await viewAccess(c, c.req.param('id'));
+  if (acc !== 'ok') return denyView(c, acc);
   const doc = await getDocx(c.req.param('id'));
   if (!doc) return c.json({ error: 'not_found' }, 404);
   return c.json({
@@ -252,6 +277,8 @@ pengajuanRoutes.get('/pengajuan/:id/docx', async (c) => {
 pengajuanRoutes.get('/pengajuan/:id/docx/download', async (c) => {
   try {
     const id = c.req.param('id')!;
+    const acc = await viewAccess(c, id);
+    if (acc !== 'ok') return denyView(c, acc);
     const found = await getPengajuan(id);
     if (!found) return c.json({ error: 'not_found' }, 404);
     const { bytes } = await generateDocx(id);

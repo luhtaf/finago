@@ -1,6 +1,6 @@
-import { and, asc, desc, eq, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, like, type SQL } from 'drizzle-orm';
 import { db } from '../../shared/db/client';
-import { pengajuan, pengajuanItem, docxFiles, outboxEvents, users } from '../../shared/db/schema';
+import { pengajuan, pengajuanItem, docxFiles, outboxEvents, users, bankAccounts } from '../../shared/db/schema';
 import { newId } from '../../shared/util';
 import { writeAudit } from '../../shared/audit';
 import { checkAnomaly } from '../monitored-items/service';
@@ -44,6 +44,7 @@ export interface ListFilter {
   kategori?: 'reimbursement' | 'pengajuan_baru';
   state?: string;
   kodeProyek?: string;
+  pengajuId?: string; // diisi route buat pengaju biasa → cuma miliknya
 }
 
 /** Hitung subtotal per item (round) + total header. */
@@ -59,24 +60,51 @@ function priceItems(items: ItemInput[]) {
 const nbrFor = (n: number, year: string) => `BR${String(n).padStart(3, '0')}${year}`;
 const inYear = (nbr: string, year: string) => nbr.startsWith('BR') && nbr.endsWith(year);
 
+const yearOf = (tanggal: string | undefined) => (tanggal || '').slice(0, 4) || String(new Date().getFullYear());
+const seqOf = (nbr: string, year: string) => Number(nbr.slice(2, nbr.length - year.length)) || 0;
+
 /**
- * Generate NBR: posisi-dalam-tahun + 1, format BR<seq3><tahun> → mis. BR0012026.
- * Sequence di-reset per tahun (diambil dari tanggal pengajuan). Saat ada delete,
- * `renumberYear` merapatkan nomor lagi.
- * ⚠️ TODO: race condition saat create concurrent (unique `nbr`) — retry-on-unique nanti.
+ * Generate NBR: nomor terbesar dalam tahun + 1, format BR<seq3><tahun> → mis. BR0012026.
+ * Sequence di-reset per tahun (dari tanggal pengajuan). Delete merapatkan nomor lagi
+ * (`renumberStmts`). Pakai MAX (bukan COUNT) biar gak tabrakan kalau ada celah.
  */
 async function nextNbr(year: string): Promise<string> {
-  const rows = await db.select({ nbr: pengajuan.nbr }).from(pengajuan);
-  const n = rows.filter((r) => inYear(r.nbr, year)).length + 1;
-  return nbrFor(n, year);
+  const rows = await db.select({ nbr: pengajuan.nbr }).from(pengajuan).where(like(pengajuan.nbr, `BR%${year}`));
+  const max = rows.filter((r) => inYear(r.nbr, year)).reduce((m, r) => Math.max(m, seqOf(r.nbr, year)), 0);
+  return nbrFor(max + 1, year);
+}
+
+const isNbrConflict = (e: unknown) => /UNIQUE constraint failed: pengajuan\.nbr/i.test(String((e as Error)?.message ?? e) + String((e as { cause?: unknown })?.cause ?? ''));
+
+/** Statement (buat db.batch) yang merapatkan NBR se-tahun sesuai urutan createdAt, kecuali `skipId`. */
+async function renumberStmts(year: string, skipId?: string) {
+  const rest = (await db.select({ id: pengajuan.id, nbr: pengajuan.nbr }).from(pengajuan)
+    .where(like(pengajuan.nbr, `BR%${year}`)).orderBy(asc(pengajuan.createdAt)))
+    .filter((r) => r.id !== skipId && inYear(r.nbr, year));
+  // 2-fase (TMP → final) biar gak tabrakan unique `nbr`
+  return [
+    ...rest.map((r) => db.update(pengajuan).set({ nbr: `TMP-${r.id}` }).where(eq(pengajuan.id, r.id))),
+    ...rest.map((r, i) => db.update(pengajuan).set({ nbr: nbrFor(i + 1, year) }).where(eq(pengajuan.id, r.id))),
+  ];
 }
 
 export async function createPengajuan(input: CreatePengajuanInput, userId: string) {
   const id = newId('pgj');
-  const year = (input.tanggal || '').slice(0, 4) || String(new Date().getFullYear());
-  const nbr = await nextNbr(year);
+  const year = yearOf(input.tanggal);
   const { priced, total } = priceItems(input.items);
 
+  // create bersamaan bisa dapet nbr sama → unique violation → hitung ulang & coba lagi
+  let nbr = '';
+  for (let attempt = 0; ; attempt++) {
+    nbr = await nextNbr(year);
+    try { await insertNew(nbr); break; }
+    catch (e) { if (!isNbrConflict(e) || attempt >= 4) throw e; }
+  }
+
+  await writeAudit({ entity: 'pengajuan', entityId: id, action: 'create', actorId: userId });
+  return { id, nbr };
+
+  async function insertNew(nbr: string) {
   await db.transaction(async (tx) => {
     await tx.insert(pengajuan).values({
       id,
@@ -108,9 +136,7 @@ export async function createPengajuan(input: CreatePengajuanInput, userId: strin
       );
     }
   });
-
-  await writeAudit({ entity: 'pengajuan', entityId: id, action: 'create', actorId: userId });
-  return { id, nbr };
+  }
 }
 
 export async function getPengajuan(id: string) {
@@ -128,6 +154,7 @@ export async function listPengajuan(filter: ListFilter = {}) {
   if (filter.kategori) conds.push(eq(pengajuan.kategori, filter.kategori));
   if (filter.state) conds.push(eq(pengajuan.state, filter.state as never));
   if (filter.kodeProyek) conds.push(eq(pengajuan.kodeProyek, filter.kodeProyek));
+  if (filter.pengajuId) conds.push(eq(pengajuan.pengajuId, filter.pengajuId));
 
   return db
     .select({
@@ -158,10 +185,6 @@ export async function deletePengajuan(id: string, actorId?: string) {
   if (!header) return null;
   const year = header.nbr.slice(-4);
 
-  // sisa pengajuan tahun sama (kecuali yg dihapus), urut createdAt → jadi urutan nomor baru
-  const rest = (await db.select({ id: pengajuan.id, nbr: pengajuan.nbr }).from(pengajuan).orderBy(asc(pengajuan.createdAt)))
-    .filter((r) => r.id !== id && inYear(r.nbr, year));
-
   // ⚠️ SEMUA jadi 1 batch (atomic, 1 subrequest ke Turso). JANGAN pakai transaksi
   // interaktif statement-per-statement → di Cloudflare Workers kena limit subrequest
   // ("Too many subrequests") begitu jumlah baris besar. Renumber 2-fase (TMP → final)
@@ -170,8 +193,7 @@ export async function deletePengajuan(id: string, actorId?: string) {
     db.delete(pengajuanItem).where(eq(pengajuanItem.pengajuanId, id)),
     db.delete(docxFiles).where(eq(docxFiles.pengajuanId, id)),
     db.delete(pengajuan).where(eq(pengajuan.id, id)),
-    ...rest.map((r) => db.update(pengajuan).set({ nbr: `TMP-${r.id}` }).where(eq(pengajuan.id, r.id))),
-    ...rest.map((r, i) => db.update(pengajuan).set({ nbr: nbrFor(i + 1, year) }).where(eq(pengajuan.id, r.id))),
+    ...(await renumberStmts(year, id)),
   ];
   await db.batch(stmts as unknown as Parameters<typeof db.batch>[0]);
 
@@ -235,6 +257,22 @@ export async function updateDraft(id: string, input: UpdateDraftInput) {
       );
     }
   });
+
+  // tahun tanggal diganti → NBR ikut pindah ke urutan tahun baru, tahun lama dirapatkan.
+  const oldYear = header.nbr.slice(-4);
+  const newYear = input.tanggal ? yearOf(input.tanggal) : oldYear;
+  if (newYear !== oldYear && inYear(header.nbr, oldYear)) {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const nbr = await nextNbr(newYear);
+        await db.batch([
+          db.update(pengajuan).set({ nbr }).where(eq(pengajuan.id, id)),
+          ...(await renumberStmts(oldYear, id)),
+        ] as unknown as Parameters<typeof db.batch>[0]);
+        break;
+      } catch (e) { if (!isNbrConflict(e) || attempt >= 4) throw e; }
+    }
+  }
 
   await writeAudit({ entity: 'pengajuan', entityId: id, action: 'update_draft' });
   return getPengajuan(id);
@@ -330,4 +368,17 @@ export async function addBukti(id: string, keys: string[], actorId: string) {
   await db.update(pengajuan).set({ buktiUrl: JSON.stringify(merged) }).where(eq(pengajuan.id, id));
   await writeAudit({ entity: 'pengajuan', entityId: id, action: 'add_bukti', actorId, meta: { added: keys.length, state: header.state } });
   return { buktiKeys: merged };
+}
+
+/** Rekening tersimpan harus milik si pengaju (rekeningList ad-hoc tetap bebas, by design). */
+export async function bankAccountOwnedBy(bankAccountId: string, userId: string): Promise<boolean> {
+  const row = await db.query.bankAccounts.findFirst({ where: and(eq(bankAccounts.id, bankAccountId), eq(bankAccounts.userId, userId)), columns: { id: true } });
+  return !!row;
+}
+
+/** Apakah lampiran `key` nempel di pengajuan milik `userId` (nota atau bukti). */
+export async function attachmentOwnedBy(key: string, userId: string): Promise<boolean> {
+  const rows = await db.select({ notaUrl: pengajuan.notaUrl, buktiUrl: pengajuan.buktiUrl })
+    .from(pengajuan).where(eq(pengajuan.pengajuId, userId));
+  return rows.some((r) => parseKeys(r.notaUrl).includes(key) || parseKeys(r.buktiUrl).includes(key));
 }

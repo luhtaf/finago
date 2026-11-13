@@ -60,7 +60,8 @@ Gak ada test suite / linter. Verifikasi = `typecheck` + dry-run bundle + smoke t
 - **Auth**: login email+password → JWT HS256 (7 hari, payload `{sub,nama,roles}`). `jwtAuth` set `c.get('user')`, `requireAuth` global → 401 tanpa token valid (kecuali `/health`, `/auth/login`), `requireRole(...)` per route. FE (`app/lib/auth.js` + `api.js`) auto-logout kalau token expired atau server balas 401. Prod tanpa `JWT_SECRET` = fail closed.
 - **Aturan bisnis (dikonfirmasi user 2026-11-13)**: approver/verifikator **boleh** verify + approve pengajuannya sendiri (Adinda = Finance, pegang semua role). Jangan "fix" ini jadi separation-of-duties tanpa diminta.
 - **Alur state pengajuan**: `draft → submitted | needs_justification → verified → approved → paid`, cabang `returned` (balik ke draft saat diedit) / `rejected`, `reopen` balikin ke `prevState`. Transisi draft/submit/justify di `features/pengajuan/service.ts`; sisanya di `features/approval/service.ts`. Tiap transisi `writeAudit`.
-- **NBR** `BR<seq3><tahun>` = posisi dalam tahun; delete pengajuan **merenumber** NBR lain se-tahun (batch tunggal — Workers punya limit subrequest, jangan pakai transaksi interaktif per-baris).
+- **NBR** `BR<seq3><tahun>` = MAX se-tahun + 1, retry kalau tabrakan unique (create paralel). Delete pengajuan **merenumber** NBR lain se-tahun; ganti tahun di draft memindah NBR ke tahun baru. Semua lewat `renumberStmts` + `db.batch` tunggal (Workers punya limit subrequest, jangan transaksi interaktif per-baris). Karena NBR bisa berubah, **apa pun yang disimpan permanen jangan di-key pakai NBR** — docx di R2 = `pengajuan/<id>.docx`.
+- **Visibilitas**: verifikator/approver/admin lihat semua; pengaju cuma miliknya (`GET /pengajuan`, `/pengajuan/:id`, docx, export, `/uploads/file` dicek kepemilikan lampiran). `bankAccountId` wajib rekening milik pengaju.
 - **Lampiran**: `POST /uploads` → key `nota/nota_<id>.<ext>` di R2. `pengajuan.nota_url` (nota saat pengajuan, ikut di-embed ke docx) dan `pengajuan.bukti_url` (bukti penggunaan dana, ditambah setelah jalan/cair) sama-sama JSON array of key. FE nampilin lewat `api.blobUrl('/uploads/file?key=')` karena `<img>` gak bisa kirim header auth.
 - **Output**: docx FORMULIR (`features/pengajuan/docx.ts`, library `docx`) + export rekap `.xlsx` (`features/pengajuan/export.ts` + `shared/xlsx.ts`, writer minimal di atas `jszip`).
 
@@ -81,19 +82,13 @@ Arsitektur: **vertical slice / feature-based**, bukan layer-based (jangan misah 
 ### ⚠️ Warning lintas-fitur aktif
 
 - `pengajuan` ⇄ `sync-onedrive`: ubah skema tabel `pengajuan`/`pengajuan_item` → cek mapping kolom di `sync-onedrive/consumer.ts` + provider (Sheets/Workbook).
-- `sync-onedrive`: **cron** (`wrangler.toml [triggers]`) baca tabel `outbox_events` → provider. Jangan ubah `type` (`sync_pengajuan`, `upload_docx`) / `payload` tanpa update consumer. Idempotent pakai `nbr` — padahal delete me-renumber `nbr` (lihat Masalah terbuka).
+- `sync-onedrive`: **cron** (`wrangler.toml [triggers]`) baca tabel `outbox_events` → provider. Jangan ubah `type` (`sync_pengajuan`, `upload_docx`) / `payload` tanpa update consumer. Idempotent pakai `nbr` — tapi `nbr` bisa berubah (renumber), jadi kalau sync dinyalakan lagi: key baris sheet / nama file OneDrive sebaiknya pindah ke `pengajuan.id`.
 - `monitored-items` = flag boolean `pengajuan_item.monitored`, toggle via `POST /pengajuan-items/:itemId/monitor {on}`. `GET /monitored-items` = item ber-flag lintas pengajuan. `PATCH /pengajuan/:id` me-replace item (id baru) dan **membawa flag by nama item** — jangan hapus logika itu.
 - Migrasi: kolom `monitored_item_id` + tabel `monitored_items` = **dead** (sisa model lama). TODO regen `drizzle/` pas skema stabil.
 - `pengajuan.total` dihitung & di-store di service (sum `pengajuan_item.subtotal`) — jangan percaya angka dari FE.
 - `pengajuan.bukti_url` (migrasi `0004_bukti_url`) dipakai `POST /pengajuan/:id/bukti`, detail FE, dan kolom "Jml Bukti" di export xlsx. Belum ikut ke docx / sync.
 - Kolom export xlsx (`features/pengajuan/export.ts`) dipakai Finance sebagai pengganti sheet lama — ubah urutan/nama kolom = kabarin user.
 - ⚠️ `backend/src/shared/db/seed.ts` `onConflictDoUpdate` **reset password** user yang ada ke `fina123`. Jangan jalanin seed ke Turso prod. Nambah user prod = `POST /users` di API live (login admin).
-
-## Masalah terbuka (dari code review 2026-11-13, belum di-fix — butuh keputusan user)
-
-- **Renumber NBR saat delete** bikin `docx_files.r2_key` (`pengajuan/<NBR>.docx`) + file/baris sync nunjuk NBR lama → objek R2 bisa ketimpa pengajuan baru dengan nomor yang sama. Opsi: stop renumber (soft-delete / void) atau key docx pakai `id`.
-- **Visibilitas**: `GET /pengajuan`, `/pengajuan/:id`, `/uploads/file` bisa dibaca semua user login (termasuk no. rekening & nota orang lain). `bankAccountId` gak dicek milik pengaju.
-- **Race `nextNbr`**: create bersamaan bisa dapet NBR sama → 500 unique. Ganti tahun di edit gak ganti NBR.
 
 ## Data contoh (di `../`, di luar repo)
 

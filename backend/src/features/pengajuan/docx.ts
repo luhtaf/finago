@@ -256,7 +256,9 @@ export async function generateDocx(pengajuanId: string): Promise<{ r2Key: string
 
   const bytes = new Uint8Array(await Packer.toBuffer(doc));
 
-  const r2Key = `pengajuan/${header.nbr}.docx`;
+  // key pakai `id` (stabil), BUKAN nbr — nbr bisa berubah saat delete me-renumber, dulu
+  // bikin file pengajuan lain ketimpa waktu ada pengajuan baru yang dapet nomor sama.
+  const r2Key = `pengajuan/${header.id}.docx`;
   await r2.put(r2Key, bytes);
 
   const existing = await db.query.docxFiles.findFirst({ where: eq(docxFiles.pengajuanId, pengajuanId) });
