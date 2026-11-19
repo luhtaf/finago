@@ -1,6 +1,6 @@
 import { and, asc, eq, gte, lte, type SQL } from 'drizzle-orm';
 import { db } from '../../shared/db/client';
-import { pengajuan, pengajuanItem, users } from '../../shared/db/schema';
+import { pengajuan, pengajuanItem, users, projects, bankAccounts } from '../../shared/db/schema';
 import { buildXlsx } from '../../shared/xlsx';
 import { parseKeys } from './service';
 
@@ -74,4 +74,69 @@ export async function exportPengajuanXlsx(f: ExportFilter): Promise<Uint8Array> 
       rows: items.map(({ it, nbr }) => [nbr, it.item, it.qty, it.satuan, it.harga, it.subtotal, it.remark, it.monitored ? 'Ya' : '']),
     },
   ]);
+}
+
+/**
+ * Export 1 pengajuan → .xlsx berlayout FORMULIR (padanan Excel dari docx di docx.ts):
+ * info dokumen di atas, tabel rincian, TOTAL, rekening tujuan, blok tanda tangan.
+ * Return null kalau gak ketemu. Izin dicek di route.
+ */
+export async function exportFormulirXlsx(id: string): Promise<{ nbr: string; bytes: Uint8Array } | null> {
+  const [row] = await db
+    .select({ p: pengajuan, pengaju: users.nama, proyek: projects.deskripsi })
+    .from(pengajuan)
+    .leftJoin(users, eq(pengajuan.pengajuId, users.id))
+    .leftJoin(projects, eq(pengajuan.kodeProyek, projects.kode))
+    .where(eq(pengajuan.id, id))
+    .limit(1);
+  if (!row) return null;
+  const { p } = row;
+  const items = await db.select().from(pengajuanItem).where(eq(pengajuanItem.pengajuanId, id));
+
+  // rekening: snapshot rekeningList, fallback rekening tersimpan (sama seperti docx)
+  let rekening = (p.rekeningList ?? []).map((r) => `${r.number} ${r.bankName} a.n ${r.holderName}`);
+  if (!rekening.length && p.bankAccountId) {
+    const b = await db.query.bankAccounts.findFirst({ where: eq(bankAccounts.id, p.bankAccountId) });
+    if (b) rekening = [`${b.number} ${b.bankName} a.n ${b.holderName}`];
+  }
+
+  const kat = KAT_LABEL[p.kategori] ?? p.kategori;
+  const signed = (ok: boolean) => (ok ? 'Signed via System' : '');
+  const st = p.state;
+  const reviewed = st === 'verified' || st === 'approved' || st === 'paid';
+  const approved = st === 'approved' || st === 'paid';
+
+  const bytes = await buildXlsx([{
+    name: p.nbr,
+    columns: [
+      { header: 'No', width: 6 }, { header: 'Rincian Anggaran', width: 38 }, { header: 'Kuantitas', width: 11 },
+      { header: 'Sat.', width: 9 }, { header: 'Harga Satuan', width: 16, money: true },
+      { header: 'Jumlah', width: 18, money: true }, { header: 'Remark', width: 26 },
+    ],
+    preamble: [
+      [`FORMULIR ${kat.toUpperCase()}`],
+      ['PT. KARTA BHUMI NUSANTARA'],
+      [],
+      ['No. Dokumen', `${p.nbr}/${p.kodeProyek}/${kat.replace(' ', '-')}`],
+      ['Tanggal', p.tanggal],
+      ['Kode Proyek', row.proyek ? `${p.kodeProyek} — ${row.proyek}` : p.kodeProyek],
+      ['Nama Pengajuan', p.nama],
+      ['Nama Pengaju', row.pengaju ?? '-'],
+      ['Prioritas', p.prioritas === 'urgent' ? 'Urgent' : 'Not Urgent'],
+      ['Status', STATE_LABEL[p.state] ?? p.state],
+      [],
+    ],
+    rows: items.map((it, i) => [i + 1, it.item, it.qty, it.satuan, it.harga, it.subtotal, it.remark]),
+    footer: [
+      [null, null, null, null, 'TOTAL', p.total],
+      [],
+      ['Dikirim ke Rekening'],
+      ...(rekening.length ? rekening.map((r, i) => [`${i + 1}.`, r]) : [[null, '-']]),
+      [],
+      ['', 'Prepared & Requested by', 'Reviewed by', null, 'Approved by'],
+      ['', row.pengaju ?? '-', p.reviewedBy ?? '', null, p.approvedBy ?? ''],
+      ['', signed(st !== 'draft'), signed(reviewed), null, signed(approved)],
+    ],
+  }]);
+  return { nbr: p.nbr, bytes };
 }

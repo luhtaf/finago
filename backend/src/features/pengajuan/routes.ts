@@ -4,7 +4,7 @@ import { getUser } from '../../shared/auth';
 import { r2 } from '../../shared/r2/client';
 import { newId } from '../../shared/util';
 import { generateDocx } from './docx';
-import { exportPengajuanXlsx } from './export';
+import { exportPengajuanXlsx, exportFormulirXlsx } from './export';
 import {
   createPengajuan,
   getPengajuan,
@@ -270,6 +270,22 @@ pengajuanRoutes.get('/pengajuan/:id/docx', async (c) => {
   return c.json({
     ...doc,
     url: doc.r2Key ? r2.getUrl(doc.r2Key) : null,
+  });
+});
+
+// GET /pengajuan/:id/xlsx — FORMULIR 1 pengajuan dalam format Excel (padanan docx).
+// Izin sama dengan docx: pemilik atau verifikator/approver/admin.
+pengajuanRoutes.get('/pengajuan/:id/xlsx', async (c) => {
+  const id = c.req.param('id')!;
+  const acc = await viewAccess(c, id);
+  if (acc !== 'ok') return denyView(c, acc);
+  const res = await exportFormulirXlsx(id);
+  if (!res) return c.json({ error: 'not_found' }, 404);
+  return new Response(res.bytes as unknown as ArrayBuffer, {
+    headers: {
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': `attachment; filename="${res.nbr}.xlsx"`,
+    },
   });
 });
 

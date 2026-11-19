@@ -8,6 +8,11 @@ export interface Sheet {
   name: string;          // maks 31 char, tanpa : \ / ? * [ ]
   columns: { header: string; width?: number; money?: boolean }[];
   rows: Cell[][];
+  // Opsional (buat layout dokumen, mis. FORMULIR): baris info di ATAS header tabel
+  // (kolom A bold = label) + baris di BAWAH tabel (bold, angka ikut format kolom).
+  // Kalau ada preamble → tanpa freeze pane & autofilter.
+  preamble?: Cell[][];
+  footer?: Cell[][];
 }
 
 const esc = (s: string) =>
@@ -24,15 +29,15 @@ const colName = (i: number) => {
 
 const safeSheetName = (n: string) => n.replace(/[:\\/?*[\]]/g, ' ').slice(0, 31) || 'Sheet';
 
-// style index: 0 = default, 1 = header bold+fill, 2 = angka ribuan (#,##0)
+// style index: 0 = default, 1 = header bold+fill, 2 = angka ribuan (#,##0), 3 = bold, 4 = bold + ribuan
 const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
 <numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0"/></numFmts>
-<fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts>
+<fonts count="3"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts>
 <fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF1E2A8E"/><bgColor indexed="64"/></patternFill></fill></fills>
 <borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
 <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-<cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs>
+<cellXfs count="5"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="164" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1" applyNumberFormat="1"/></cellXfs>
 <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
 </styleSheet>`;
 
@@ -43,16 +48,26 @@ function sheetXml(sh: Sheet): string {
     if (typeof v === 'number' && Number.isFinite(v)) return `<c r="${ref}"${style ? ` s="${style}"` : ''}><v>${v}</v></c>`;
     return `<c r="${ref}" t="inlineStr"${style ? ` s="${style}"` : ''}><is><t xml:space="preserve">${esc(String(v))}</t></is></c>`;
   };
-  const head = `<row r="1">${sh.columns.map((c, i) => cellXml(c.header, `${colName(i)}1`, 1)).join('')}</row>`;
+  const money = (ci: number, v: Cell) => !!sh.columns[ci]?.money && typeof v === 'number';
+  const pre = sh.preamble ?? [];
+  const hr = pre.length + 1; // nomor baris header tabel
+  const preXml = pre.map((r, ri) =>
+    `<row r="${ri + 1}">${r.map((v, ci) => cellXml(v, `${colName(ci)}${ri + 1}`, ci === 0 ? 3 : 0)).join('')}</row>`).join('');
+  const head = `<row r="${hr}">${sh.columns.map((c, i) => cellXml(c.header, `${colName(i)}${hr}`, 1)).join('')}</row>`;
   const body = sh.rows.map((r, ri) => {
-    const n = ri + 2;
-    return `<row r="${n}">${r.map((v, ci) => cellXml(v, `${colName(ci)}${n}`, sh.columns[ci]?.money && typeof v === 'number' ? 2 : 0)).join('')}</row>`;
+    const n = hr + ri + 1;
+    return `<row r="${n}">${r.map((v, ci) => cellXml(v, `${colName(ci)}${n}`, money(ci, v) ? 2 : 0)).join('')}</row>`;
   }).join('');
-  const last = `${colName(Math.max(sh.columns.length - 1, 0))}${sh.rows.length + 1}`;
+  const foot = (sh.footer ?? []).map((r, ri) => {
+    const n = hr + sh.rows.length + ri + 1;
+    return `<row r="${n}">${r.map((v, ci) => cellXml(v, `${colName(ci)}${n}`, money(ci, v) ? 4 : 3)).join('')}</row>`;
+  }).join('');
+  const last = `${colName(Math.max(sh.columns.length - 1, 0))}${hr + sh.rows.length}`;
+  const isTable = pre.length === 0;
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
-<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
-<cols>${cols}</cols><sheetData>${head}${body}</sheetData><autoFilter ref="A1:${last}"/></worksheet>`;
+${isTable ? '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>' : ''}
+<cols>${cols}</cols><sheetData>${preXml}${head}${body}${foot}</sheetData>${isTable ? `<autoFilter ref="A1:${last}"/>` : ''}</worksheet>`;
 }
 
 export async function buildXlsx(sheets: Sheet[]): Promise<Uint8Array> {
@@ -71,7 +86,7 @@ ${sheets.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" Co
   zip.file('xl/workbook.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${names.map((n, i) => `<sheet name="${esc(n)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('')}</sheets>${
   // autoFilter butuh defined name tersembunyi biar Excel gak "repair"
-  `<definedNames>${sheets.map((s, i) => `<definedName name="_xlnm._FilterDatabase" localSheetId="${i}" hidden="1">'${esc(names[i]!.replace(/'/g, "''"))}'!$A$1:$${colName(Math.max(s.columns.length - 1, 0))}$${s.rows.length + 1}</definedName>`).join('')}</definedNames>`
+  (sheets.some((s) => !s.preamble?.length) ? `<definedNames>${sheets.map((s, i) => s.preamble?.length ? '' : `<definedName name="_xlnm._FilterDatabase" localSheetId="${i}" hidden="1">'${esc(names[i]!.replace(/'/g, "''"))}'!$A$1:$${colName(Math.max(s.columns.length - 1, 0))}$${s.rows.length + 1}</definedName>`).join('')}</definedNames>` : '')
 }</workbook>`);
   zip.file('xl/_rels/workbook.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('')}<Relationship Id="rId${sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`);

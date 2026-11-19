@@ -287,5 +287,9 @@ export const pengajuanDetail = () => ({
     try { await api.download('/pengajuan/' + this.p.id + '/docx/download', this.p.nbr + '.docx'); }
     catch (e) { toast(e.message, false); }
   },
+  async downloadXlsx() {
+    try { await api.download('/pengajuan/' + this.p.id + '/xlsx', this.p.nbr + '.xlsx'); }
+    catch (e) { toast(e.message, false); }
+  },
   edit() { location.hash = '#/pengajuan/' + this.p.id + '/edit'; },
 });

@@ -63,7 +63,7 @@ Gak ada test suite / linter. Verifikasi = `typecheck` + dry-run bundle + smoke t
 - **NBR** `BR<seq3><tahun>` = MAX se-tahun + 1, retry kalau tabrakan unique (create paralel). Delete pengajuan **merenumber** NBR lain se-tahun; ganti tahun di draft memindah NBR ke tahun baru. Semua lewat `renumberStmts` + `db.batch` tunggal (Workers punya limit subrequest, jangan transaksi interaktif per-baris). Karena NBR bisa berubah, **apa pun yang disimpan permanen jangan di-key pakai NBR** — docx di R2 = `pengajuan/<id>.docx`.
 - **Visibilitas**: verifikator/approver/admin lihat semua; pengaju cuma miliknya (`GET /pengajuan`, `/pengajuan/:id`, docx, export, `/uploads/file` dicek kepemilikan lampiran). `bankAccountId` wajib rekening milik pengaju.
 - **Lampiran**: `POST /uploads` → key `nota/nota_<id>.<ext>` di R2. `pengajuan.nota_url` (nota saat pengajuan, ikut di-embed ke docx) dan `pengajuan.bukti_url` (bukti penggunaan dana, ditambah setelah jalan/cair) sama-sama JSON array of key. FE nampilin lewat `api.blobUrl('/uploads/file?key=')` karena `<img>` gak bisa kirim header auth.
-- **Output**: docx FORMULIR (`features/pengajuan/docx.ts`, library `docx`) + export rekap `.xlsx` (`features/pengajuan/export.ts` + `shared/xlsx.ts`, writer minimal di atas `jszip`).
+- **Output**: docx FORMULIR (`features/pengajuan/docx.ts`, library `docx`), FORMULIR versi Excel per pengajuan (`GET /pengajuan/:id/xlsx`), dan rekap `.xlsx` semua pengajuan (`GET /pengajuan/export.xlsx`). Dua-duanya di `features/pengajuan/export.ts` + `shared/xlsx.ts` (writer minimal di atas `jszip`, dukung `preamble`/`footer` buat layout dokumen). Isi FORMULIR docx & xlsx harus sejalan — ubah satu, cek yang lain.
 
 ## Konvensi struktur kode (feature-based) + aturan WARNING
 

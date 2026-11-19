@@ -30,6 +30,7 @@ State lanjutan (verified/approved/returned/rejected/paid) di fitur `approval`.
 - `DELETE /pengajuan/:id`        — hapus + **renumber NBR** se-tahun. Pengaju cuma miliknya; verifikator/approver/admin semua.
 - `GET    /pengajuan/:id/docx`   — metadata docx terbaru + URL R2.
 - `GET    /pengajuan/export.xlsx` — rekap Excel (`export.ts`, writer di `shared/xlsx.ts`): sheet "Pengajuan" (kolom mirip sheet lama "Form responses 1") + "Detail Item". Filter `state/kategori/kodeProyek/from/to`. Pengaju biasa cuma dapet miliknya. **Route ini harus di atas `/pengajuan/:id`.**
+- `GET    /pengajuan/:id/xlsx`   — FORMULIR 1 pengajuan dalam Excel (`exportFormulirXlsx`), padanan docx. Izin = docx (pemilik / verif-approver-admin).
 - `POST   /pengajuan/:id/bukti`  — `{keys[]}` dari `POST /uploads`, append ke `pengajuan.bukti_url` (JSON array, maks 20). Boleh di state apa pun selain draft (termasuk `paid`). Pemilik / admin / verifikator. Gak ikut ke docx.
 - `POST   /uploads`              — cuma jpg/png/webp/pdf, maks 10 MB → key `nota/nota_<id>.<ext>`. `GET /uploads/file?key=` cuma terima pola itu (anti traversal).
 
