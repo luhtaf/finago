@@ -7,13 +7,11 @@ backend/local.db*
 backend/.r2-store
 **/.wrangler
 .git
-.serena
-.gstack
-.claude
 demo
 laporan
 brand
 deploy
+**/*.md
 **/*.docx
 **/*.xlsx
 **/.DS_Store

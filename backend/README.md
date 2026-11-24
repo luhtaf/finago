@@ -1,6 +1,6 @@
 # FINA go — backend
 
-Hono + Drizzle + libSQL (Turso). Feature-based. Detail desain: [`../PLAN-BE.md`](../PLAN-BE.md). Guardrail: [`CLAUDE.md`](./CLAUDE.md).
+Hono + Drizzle + libSQL (Turso). Feature-based. Detail desain: [`../PLAN-BE.md`](../PLAN-BE.md).
 
 ## Jalanin lokal
 

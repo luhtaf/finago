@@ -1,86 +1,77 @@
 # FINA go
 
-> Platform pengajuan internal **PT. Karta Bhumi Nusantara** — reimburse + purchase request dengan approval workflow.
+> Platform pengajuan internal **PT. Karta Bhumi Nusantara** — reimbursement + pengajuan baru (purchase request) dengan alur approval.
 
 <p align="center"><img src="./brand/finago-logo.png" alt="FINA go" width="320"/></p>
 
 ## Status
 
-🚧 **Phase 2 — Fitur lengkap.** **FE asli (`app/`)** + **backend (`backend/`)** nyambung end-to-end. Stack: vanilla+Alpine+Tailwind FE (mobile-friendly), Hono+Drizzle+libSQL BE.
+**Production** — dipakai tim Finance sejak Juni 2026. Menggantikan alur manual (Google Form → spreadsheet → ketik FORMULIR .docx).
 
-Jalan: **auth sendiri (JWT email+password)** → main menu → buat pengajuan (+ preview FORMULIR popup) → submit (anomaly check) → approval (verify/approve/reject by-amount rule) → **download .docx nyata** (lib `docx`). Plus kelola rekening, monitored-items (anti pengajuan ganda), master proyek. Storage R2 = FS-backed (dev). OneDrive/Graph = real-code, aktif kalau env Azure di-set. Demo mockup awal masih di `demo/`.
+## Fitur
 
-## Apa yang FINA go selesaikan
+- **Pengajuan** dengan rincian per item (qty × harga, total dihitung server), lampiran nota, rekening tujuan (bisa >1).
+- **Alur approval**: draft → submitted → verified → approved → paid, plus kembalikan (revisi), tolak, buka kembali. Audit trail tiap aksi.
+- **Role**: pengaju, verifikator, approver, admin (1 user bisa multi-role). Pengaju cuma lihat pengajuan miliknya.
+- **Dokumen**: FORMULIR otomatis (.docx & .xlsx per pengajuan), nomor dokumen `BR<seq><tahun>` otomatis.
+- **Rekap Excel** semua pengajuan sesuai filter.
+- **Bukti penggunaan dana** bisa ditambahkan walau pengajuan sudah cair.
+- **List** dengan pencarian, filter (status, kategori, proyek, tanggal), pagination keyset.
+- Kelola user, rekening (verifikasi), master proyek, item dipantau, dashboard.
 
-Karyawan PT. Karta Bhumi Nusantara butuh 2 jenis pengajuan:
+## Stack
 
-1. **Reimbursement** — klaim biaya yang sudah dikeluarkan (BBM, perdiem, perbaikan alat, makan dinas, dll)
-2. **Purchase Request** — minta perusahaan beli sesuatu (alat baru, supplies, software license, dll)
-
-Sekarang prosesnya manual (file docx + xlsx, email, chat WA, approval verbal). FINA go = workflow digital dengan:
-- Form submission standar
-- Approval chain (manager → finance → director, configurable per nominal)
-- Attachment (receipt, quotation, kwitansi)
-- Audit trail per pengajuan
-- Dashboard finance: pending, total budget, breakdown
-- Status tracking real-time
-
-## Brand
-
-| Element | Value |
+| Bagian | Teknologi |
 |---|---|
-| Nama | **FINA go** |
-| Tagline | *by Karta Bhumi Nusantara* |
-| Primary | Navy `#1e2a8e` |
-| Accent | Teal `#14b8a6` |
-| Logo | [`brand/finago-logo.png`](./brand/finago-logo.png) |
-| Vibe | Money, growth, trust |
+| FE (`app/`) | Vanilla JS + Alpine.js + Tailwind (CDN) — tanpa build step, mobile-friendly |
+| API (`backend/`) | Hono + Drizzle ORM, TypeScript (jalan di Node & Cloudflare Workers) |
+| Database | libSQL/SQLite (Turso, atau file SQLite di VPS) |
+| File | Cloudflare R2, S3-compatible, atau disk lokal |
+| Auth | Email + password → JWT (PBKDF2) |
 
-## Stack target
+## Struktur
 
-**Vanilla JS + Alpine.js + Tailwind CSS** — no build step. Drag-drop ke Netlify.
-
-| Alasan | Detail |
-|---|---|
-| Domain simple | Form + approval + table, tidak ada offline-first drama / drag chart / peta |
-| AI-friendly | Single-file SPA pattern terbukti efektif di HydroCanal demo (~3000 baris, lancar) |
-| Easy deploy | Drag folder ke Netlify, atau host static di mana saja |
-| No churn | Tidak ada dependency hell, security update minimal |
-| Cepet onboarding | Tim baru bisa baca code langsung tanpa belajar tooling |
-
-Backend: **Express + MongoDB** (pattern sama dengan HydroCanal backend).
-
-## Sister app
-
-[`../new-hydro-canal/`](../new-hydro-canal/) — QC kanal app. Punya pattern yang bisa di-reuse di FINA go:
-
-- `demo/style.css` — dark mode pattern, role pill, walkthrough tour, command palette CSS
-- `demo/app.js` — router, state management, render functions structure
-- `demo/index.html` — template per route pattern
-
-Saat scaffold demo FINA go, fork pattern ini langsung — jangan reinvent. Cuma swap warna (sky `#0284c7` → navy `#1e2a8e` + teal accent).
-
-## Docs (akan ditulis berurutan)
-
-1. **`README.md`** ← file ini (overview)
-2. `CLAUDE.md` — instruksi untuk Claude di sesi baru
-3. `FEEDBACK.md` — sumber requirement (file docx reimburse, xlsx purchase log, interview user)
-4. `DOMAIN.md` — data model (pengajuan, approval chain, attachment, budget category)
-5. `PLAN.md` — roadmap fase + tech decisions
-6. `PLAN-FE.md` — frontend detail per page
-7. `PLAN-BE.md` — backend detail per endpoint
-8. `demo/` — HTML mockup (akan dibuat setelah requirement jelas)
-
-## Quick start (kelak)
-
-```bash
-cd demo
-python3 -m http.server 8080
-# → http://localhost:8080
+```
+app/                  FE: index.html (semua view), main.js (router), lib/, features/<fitur>.js
+backend/src/
+  app.ts              definisi API (mount semua fitur)
+  index.ts            entry Node (dev / Docker; opsional melayani app/ juga)
+  worker.ts           entry Cloudflare Workers
+  features/<fitur>/   routes + service per fitur (pengajuan, approval, users, rekening, …)
+  shared/             db (schema Drizzle), auth, storage, xlsx, audit
+backend/drizzle/      migrasi database
+backend/scripts/      migrasi data, backup, export .sql
+deploy/hostinger/     docker-compose + Caddy untuk VPS
 ```
 
-## Related
+## Jalanin lokal
 
-- **Parent company**: PT. Karta Bhumi Nusantara (juga vendor utama di HydroCanal QC)
-- **Sister app**: [`../new-hydro-canal/`](../new-hydro-canal/)
-- **Umbrella**: [`../README.md`](../README.md) — bhumi-karta workspace
+```bash
+cd backend
+npm install
+env -u DATABASE_AUTH_TOKEN DATABASE_URL=file:./local.db npm run db:migrate
+env -u DATABASE_AUTH_TOKEN DATABASE_URL=file:./local.db npm run seed
+npm run dev            # API → http://localhost:8787
+npm run typecheck
+```
+
+FE: buka `app/` lewat static server mana saja (mis. `python3 -m http.server` di folder `app/`) dan arahkan `window.FG_API` di `app/index.html` ke API lokal.
+
+Atau semuanya dalam satu container:
+
+```bash
+docker build -t finago .
+docker run -p 8787:8787 -e JWT_SECRET=dev-secret -v finago-data:/data finago
+# → http://localhost:8787
+```
+
+## Deploy
+
+- **Cloudflare** (Pages + Workers + Turso + R2): [`DEPLOY.md`](./DEPLOY.md)
+- **VPS / Docker** (Hostinger, dll): [`DEPLOY-HOSTINGER.md`](./DEPLOY-HOSTINGER.md)
+
+## Dokumen lain
+
+- [`FEEDBACK.md`](./FEEDBACK.md) — sumber requirement & catatan keputusan
+- [`DOMAIN.md`](./DOMAIN.md) — model domain & aturan bisnis
+- [`PLAN-BE.md`](./PLAN-BE.md) — desain backend per endpoint

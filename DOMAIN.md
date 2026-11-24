@@ -1,6 +1,6 @@
 # DOMAIN — FINA go
 
-> Model domain + aturan bisnis (role, approval, anomaly, pencairan). Ini **konsep/aturan**; skema fisik tabel ada di `PLAN-BE.md` (biar gak dobel & gak drift). Baca `CLAUDE.md` dulu.
+> Model domain + aturan bisnis (role, approval, anomaly, pencairan). Ini **konsep/aturan**; skema fisik tabel ada di `PLAN-BE.md` (biar gak dobel & gak drift).
 
 ## ⚠️ Asumsi yang perlu konfirmasi Fathul/perusahaan
 

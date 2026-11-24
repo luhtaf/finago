@@ -33,7 +33,6 @@ Reimbursement*.docx
 Pengajuan*.xlsx
 Salinan*.xlsx
 BR[0-9]*.docx
-.gstack/
 
 # build cache
 .wrangler/
@@ -43,3 +42,11 @@ local.db
 # Data migrasi Turso/R2 → VPS (data klien, JANGAN commit)
 migrasi/
 backend/migrasi/
+
+# Tool lokal (gak masuk repo)
+CLAUDE.md
+.claude/
+.serena/
+.gstack/
+AGENTS.md
+.cursor/

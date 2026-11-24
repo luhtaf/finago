@@ -1,7 +1,7 @@
 # PLAN-BE — FINA go backend
 
 > Keputusan arsitektur + skema + endpoint. Sumber kebenaran teknis backend. Update saat ada perubahan desain.
-> Baca dulu: `CLAUDE.md` (guardrail global + konvensi struktur), `DOMAIN.md` (kalau udah ada), data model di `CLAUDE.md` section "Data model nyata".
+> Baca dulu: `DOMAIN.md` (model domain & aturan bisnis).
 
 ## Status
 
@@ -26,17 +26,17 @@ Requirement utama bukan "platform tertentu", tapi **portabilitas**: murah/gratis
 
 **Kapan pindah ke Postgres:** kalau butuh laporan/analytic berat, banyak modul nyambung (jadi ERP), atau concurrent-write tinggi. Sampai situ migrasi SQL-nya kecil. Sebelum itu, Turso menang di ops (solo engineer).
 
-## Struktur folder (feature-based — lihat guardrail di CLAUDE.md)
+## Struktur folder (feature-based)
 
 ```
 backend/
   features/
-    pengajuan/        CLAUDE.md · routes · model · service · docx.ts
-    approval/         CLAUDE.md · routes · service
-    rekening/         CLAUDE.md · routes · service   (bank account + verifikasi)
-    monitored-items/  CLAUDE.md · routes · service   (anomaly detection)
-    projects/         CLAUDE.md · routes            (master kode unik / REKAP COP)
-    sync-onedrive/    CLAUDE.md · consumer.ts        (cron, baca outbox → Graph; gak ada route publik)
+    pengajuan/        routes · model · service · docx.ts
+    approval/         routes · service
+    rekening/         routes · service   (bank account + verifikasi)
+    monitored-items/  routes · service   (anomaly detection)
+    projects/         routes            (master kode unik / REKAP COP)
+    sync-onedrive/    consumer.ts        (cron, baca outbox → Graph; gak ada route publik)
   shared/
     db/               drizzle client + schema
     graph/            Microsoft Graph client (auth app-only, workbook, upload)

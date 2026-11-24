@@ -20,7 +20,7 @@ interface EventPayload {
  * Handler `sync_pengajuan` → append 1 baris ke spreadsheet OneDrive.
  * Idempotency: pakai `nbr` sebagai key — kalau row dengan nbr ini sudah ada di
  * sheet, Graph layer yang harus skip/upsert (stub belum cek). Mapping kolom di
- * sini ⚠️ kalau schema `pengajuan` berubah, update CLAUDE.md feature ini.
+ * sini ⚠️ kalau schema `pengajuan` berubah, update mapping kolom ini.
  */
 async function handleSyncPengajuan(pengajuanId: string): Promise<void> {
   const header = await db.query.pengajuan.findFirst({ where: eq(pengajuan.id, pengajuanId) });
