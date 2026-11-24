@@ -39,3 +39,7 @@ BR[0-9]*.docx
 .wrangler/
 .r2-store/
 local.db
+
+# Data migrasi Turso/R2 → VPS (data klien, JANGAN commit)
+migrasi/
+backend/migrasi/

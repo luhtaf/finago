@@ -1,0 +1,38 @@
+# FINA go di VPS Hostinger. Jalankan dari folder ini:
+#   cp .env.example .env   # isi JWT_SECRET (+ FINAGO_DOMAIN kalau domain sudah ada)
+#   docker compose up -d --build
+services:
+  finago:
+    build:
+      context: ../..          # root repo (Dockerfile ada di sana)
+    image: finago:latest
+    restart: unless-stopped
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET wajib diisi di .env}
+    volumes:
+      - finago-data:/data     # finago.db + files/ — INI yang di-backup
+    expose:
+      - "8787"
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
+
+  caddy:
+    image: caddy:2.8
+    restart: unless-stopped
+    depends_on: [finago]
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      # kosong → layani HTTP di :80 (akses via IP). Isi domain → HTTPS otomatis (Let's Encrypt).
+      FINAGO_DOMAIN: ${FINAGO_DOMAIN:-:80}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  finago-data:
+  caddy-data:
+  caddy-config:

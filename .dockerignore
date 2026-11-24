@@ -1,0 +1,19 @@
+# Jangan pernah masuk image: kredensial, data lokal, cache
+**/node_modules
+**/.env
+**/.env.*
+!backend/.env.example
+backend/local.db*
+backend/.r2-store
+**/.wrangler
+.git
+.serena
+.gstack
+.claude
+demo
+laporan
+brand
+deploy
+**/*.docx
+**/*.xlsx
+**/.DS_Store

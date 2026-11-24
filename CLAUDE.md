@@ -30,6 +30,8 @@ Cron          → Workers Cron Trigger */5 → sync outbox (no-op selama SYNC_PR
 
 Render / Docker masih didukung (`src/index.ts`, `npm run start`) tapi **tidak dipakai** sekarang. `DEPLOY.md` bagian Render = alternatif.
 
+**Migrasi ke VPS Hostinger (disiapkan, belum cutover)** — runbook `DEPLOY-HOSTINGER.md`. Target: 1 container Node (API + FE same-origin, `STATIC_DIR`) + Caddy, DB = file SQLite + lampiran di volume `/data`. Selama belum cutover, Cloudflare tetap prod: **perubahan kode harus tetap jalan di dua runtime** (Workers via `worker.ts` DAN Node via `index.ts`). FE: `window.FG_API = "same-origin"` cuma di-set saat build Docker (jangan ubah `app/index.html` di repo).
+
 ## Commands
 
 Semua dari `backend/`:
