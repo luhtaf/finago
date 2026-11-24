@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, like, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, like, lte, or, sql, type SQL } from 'drizzle-orm';
 import { db } from '../../shared/db/client';
 import { pengajuan, pengajuanItem, docxFiles, outboxEvents, users, bankAccounts } from '../../shared/db/schema';
 import { newId } from '../../shared/util';
@@ -45,6 +45,11 @@ export interface ListFilter {
   state?: string;
   kodeProyek?: string;
   pengajuId?: string; // diisi route buat pengaju biasa → cuma miliknya
+  from?: string;      // tanggal >= (YYYY-MM-DD)
+  to?: string;        // tanggal <= (YYYY-MM-DD)
+  q?: string;         // cari di NBR / nama pengajuan / nama pengaju
+  cursor?: string;    // keyset: dari nextCursor halaman sebelumnya
+  limit?: number;
 }
 
 /** Hitung subtotal per item (round) + total header. */
@@ -149,14 +154,52 @@ export async function getPengajuan(id: string) {
   return { ...header, items };
 }
 
-export async function listPengajuan(filter: ListFilter = {}) {
-  const conds: SQL[] = [];
-  if (filter.kategori) conds.push(eq(pengajuan.kategori, filter.kategori));
-  if (filter.state) conds.push(eq(pengajuan.state, filter.state as never));
-  if (filter.kodeProyek) conds.push(eq(pengajuan.kodeProyek, filter.kodeProyek));
-  if (filter.pengajuId) conds.push(eq(pengajuan.pengajuId, filter.pengajuId));
+/** WHERE bersama buat list + ringkasan + export (butuh LEFT JOIN users kalau pakai `q`). */
+export function listConds(f: ListFilter): SQL | undefined {
+  const c: SQL[] = [];
+  if (f.kategori) c.push(eq(pengajuan.kategori, f.kategori));
+  if (f.state) c.push(eq(pengajuan.state, f.state as never));
+  if (f.kodeProyek) c.push(eq(pengajuan.kodeProyek, f.kodeProyek));
+  if (f.pengajuId) c.push(eq(pengajuan.pengajuId, f.pengajuId));
+  if (f.from) c.push(gte(pengajuan.tanggal, f.from));
+  if (f.to) c.push(lte(pengajuan.tanggal, f.to));
+  const q = f.q?.trim();
+  if (q) {
+    // escape wildcard LIKE biar input "%"/"_" dicari literal
+    const pat = `%${q.replace(/[\\%_]/g, (m) => '\\' + m)}%`;
+    c.push(or(
+      sql`${pengajuan.nbr} LIKE ${pat} ESCAPE '\\'`,
+      sql`${pengajuan.nama} LIKE ${pat} ESCAPE '\\'`,
+      sql`${users.nama} LIKE ${pat} ESCAPE '\\'`,
+    )!);
+  }
+  return c.length ? and(...c) : undefined;
+}
 
-  return db
+type Cursor = [tanggal: string, createdAt: number, id: string];
+const encodeCursor = (c: Cursor) => btoa(JSON.stringify(c)).replace(/=+$/, '');
+function decodeCursor(s: string): Cursor | null {
+  try {
+    const v = JSON.parse(atob(s));
+    return Array.isArray(v) && typeof v[0] === 'string' && typeof v[1] === 'number' && typeof v[2] === 'string' ? (v as Cursor) : null;
+  } catch { return null; }
+}
+
+/**
+ * List pengajuan — KEYSET pagination (bukan OFFSET): urut (tanggal, created_at, id) DESC,
+ * halaman berikut = baris "setelah" cursor terakhir. Baca ~limit baris per halaman di posisi
+ * mana pun (Turso nagih per row-read) dan stabil walau ada data baru masuk.
+ * Ringkasan (count + sum total) cuma dihitung di halaman pertama (tanpa cursor).
+ */
+export async function listPengajuan(f: ListFilter = {}) {
+  const limit = Math.min(Math.max(f.limit ?? 25, 1), 100);
+  const base = listConds(f);
+  const cur = f.cursor ? decodeCursor(f.cursor) : null;
+  const where = cur
+    ? and(base, sql`(${pengajuan.tanggal}, ${pengajuan.createdAt}, ${pengajuan.id}) < (${cur[0]}, ${cur[1]}, ${cur[2]})`)
+    : base;
+
+  const rows = await db
     .select({
       id: pengajuan.id,
       nbr: pengajuan.nbr,
@@ -172,9 +215,32 @@ export async function listPengajuan(filter: ListFilter = {}) {
     })
     .from(pengajuan)
     .leftJoin(users, eq(pengajuan.pengajuId, users.id))
-    .where(conds.length ? and(...conds) : undefined)
-    .orderBy(desc(pengajuan.createdAt));
+    .where(where)
+    .orderBy(desc(pengajuan.tanggal), desc(pengajuan.createdAt), desc(pengajuan.id))
+    .limit(limit + 1);
+
+  const hasMore = rows.length > limit;
+  const page = hasMore ? rows.slice(0, limit) : rows;
+  const last = page[page.length - 1];
+  const nextCursor = hasMore && last
+    ? encodeCursor([last.tanggal, Math.floor(new Date(last.createdAt).getTime() / 1000), last.id])
+    : null;
+
+  let summary: { count: number; total: number } | undefined;
+  if (!cur) {
+    const [s] = await db
+      .select({ count: sql<number>`count(*)`, total: sql<number>`coalesce(sum(${pengajuan.total}), 0)` })
+      .from(pengajuan)
+      .leftJoin(users, eq(pengajuan.pengajuId, users.id))
+      .where(base);
+    summary = { count: Number(s?.count ?? 0), total: Number(s?.total ?? 0) };
+  }
+
+  return { rows: page, nextCursor, summary };
 }
+
+/** Pengajuan yang sudah jalan (verified/approved/paid/...) gak boleh dihapus — NBR-nya sudah terbit. */
+export const DELETABLE_STATES = ['draft', 'rejected'] as const;
 
 /**
  * Hapus pengajuan + anak-anaknya, lalu rapatkan NBR di tahun yang sama.
@@ -183,6 +249,10 @@ export async function listPengajuan(filter: ListFilter = {}) {
 export async function deletePengajuan(id: string, actorId?: string) {
   const header = await db.query.pengajuan.findFirst({ where: eq(pengajuan.id, id) });
   if (!header) return null;
+  if (!(DELETABLE_STATES as readonly string[]).includes(header.state)) {
+    // hapus = renumber NBR se-tahun → dokumen yang sudah terbit bisa berubah nomor. Tolak.
+    throw new Error('Cuma pengajuan Draft atau Ditolak yang bisa dihapus. Tolak dulu kalau memang mau dihapus.');
+  }
   const year = header.nbr.slice(-4);
 
   // ⚠️ SEMUA jadi 1 batch (atomic, 1 subrequest ke Turso). JANGAN pakai transaksi

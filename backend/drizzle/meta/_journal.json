@@ -36,6 +36,13 @@
       "when": 1794558380789,
       "tag": "0004_bukti_url",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1795489660635,
+      "tag": "0005_list_indexes",
+      "breakpoints": true
     }
   ]
 }

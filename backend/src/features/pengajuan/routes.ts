@@ -134,12 +134,19 @@ pengajuanRoutes.post('/pengajuan', async (c) => {
   return c.json(result, 201);
 });
 
-// GET /pengajuan — list dengan filter opsional (kategori, state, kodeProyek)
+// GET /pengajuan — list KEYSET (?cursor=…&limit=25) + filter kategori/state/kodeProyek/from/to/q.
+// Return { rows, nextCursor, summary? } — summary (count + total Rp) cuma di halaman pertama.
 pengajuanRoutes.get('/pengajuan', async (c) => {
-  const { kategori, state, kodeProyek } = c.req.query();
+  const q = c.req.query();
   const u = getUser(c);
-  const rows = await listPengajuan({ kategori: kategori as never, state, kodeProyek, pengajuId: canViewAll(u) ? undefined : u.id });
-  return c.json(rows);
+  const isoDate = (v?: string) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined);
+  const res = await listPengajuan({
+    kategori: (q.kategori || undefined) as never, state: q.state || undefined, kodeProyek: q.kodeProyek || undefined,
+    from: isoDate(q.from), to: isoDate(q.to), q: q.q?.slice(0, 100) || undefined,
+    cursor: q.cursor || undefined, limit: q.limit ? Number(q.limit) : undefined,
+    pengajuId: canViewAll(u) ? undefined : u.id,
+  });
+  return c.json(res);
 });
 
 // GET /pengajuan/export.xlsx — rekap Excel (sheet Pengajuan + Detail Item), filter sama
@@ -152,7 +159,8 @@ pengajuanRoutes.get('/pengajuan/export.xlsx', async (c) => {
   const privileged = canViewAll(u);
   const bytes = await exportPengajuanXlsx({
     kategori: q.kategori || undefined, state: q.state || undefined, kodeProyek: q.kodeProyek || undefined,
-    from: isoDate(q.from), to: isoDate(q.to), pengajuId: privileged ? undefined : u.id,
+    from: isoDate(q.from), to: isoDate(q.to), q: q.q?.slice(0, 100) || undefined,
+    pengajuId: privileged ? undefined : u.id,
   });
   const stamp = new Date().toISOString().slice(0, 10);
   return new Response(bytes as unknown as ArrayBuffer, {
@@ -182,7 +190,9 @@ pengajuanRoutes.delete('/pengajuan/:id', async (c) => {
   if (!privileged && owner !== u.id) {
     return c.json({ error: 'forbidden', message: 'Cuma bisa hapus pengajuan sendiri' }, 403);
   }
-  const res = await deletePengajuan(c.req.param('id'), u.id);
+  let res;
+  try { res = await deletePengajuan(c.req.param('id'), u.id); }
+  catch (e) { return c.json({ error: 'conflict', message: (e as Error).message }, 409); }
   if (!res) return c.json({ error: 'not_found' }, 404);
   return c.json({ ok: true, deleted: res.nbr });
 });

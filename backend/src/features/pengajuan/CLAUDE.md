@@ -23,13 +23,13 @@ State lanjutan (verified/approved/returned/rejected/paid) di fitur `approval`.
 ## Endpoint (full-path, di-mount di `/`)
 
 - `POST   /pengajuan`            — buat draft baru (zod-validated), return `{id, nbr}`.
-- `GET    /pengajuan`            — list, filter query: `kategori` / `state` / `kodeProyek`.
+- `GET    /pengajuan`            — list **keyset** (bukan OFFSET): `?cursor=&limit=25` (maks 100) + filter `kategori/state/kodeProyek/from/to/q`. Return `{rows, nextCursor, summary?}`; `summary` (count + sum total) cuma di halaman pertama. Urut `(tanggal, created_at, id) DESC` = index `pengajuan_tanggal_idx`. `q` = LIKE di NBR / nama / nama pengaju (wildcard di-escape). Filter dibagi ke `listConds()` — dipakai juga export rekap biar hasil export = yang tampil.
 - `GET    /pengajuan/:id`        — header + items.
 - `PATCH  /pengajuan/:id`        — edit (hanya state `draft`), replace items + recompute total.
 - `POST   /pengajuan/:id/submit` — submit (hanya dari `draft`), return `{state, anomaly}`.
-- `DELETE /pengajuan/:id`        — hapus + **renumber NBR** se-tahun. Pengaju cuma miliknya; verifikator/approver/admin semua.
+- `DELETE /pengajuan/:id`        — hapus + **renumber NBR** se-tahun. **Cuma state `draft`/`rejected`** (`DELETABLE_STATES`, 409 selain itu — NBR dokumen yang sudah terbit gak boleh geser). Pengaju cuma miliknya; verifikator/approver/admin semua.
 - `GET    /pengajuan/:id/docx`   — metadata docx terbaru + URL R2.
-- `GET    /pengajuan/export.xlsx` — rekap Excel (`export.ts`, writer di `shared/xlsx.ts`): sheet "Pengajuan" (kolom mirip sheet lama "Form responses 1") + "Detail Item". Filter `state/kategori/kodeProyek/from/to`. Pengaju biasa cuma dapet miliknya. **Route ini harus di atas `/pengajuan/:id`.**
+- `GET    /pengajuan/export.xlsx` — rekap Excel (`export.ts`, writer di `shared/xlsx.ts`): sheet "Pengajuan" (kolom mirip sheet lama "Form responses 1") + "Detail Item". Filter = `listConds` (sama dengan list, termasuk `q`). Pengaju biasa cuma dapet miliknya. **Route ini harus di atas `/pengajuan/:id`.**
 - `GET    /pengajuan/:id/xlsx`   — FORMULIR 1 pengajuan dalam Excel (`exportFormulirXlsx`), padanan docx. Izin = docx (pemilik / verif-approver-admin).
 - `POST   /pengajuan/:id/bukti`  — `{keys[]}` dari `POST /uploads`, append ke `pengajuan.bukti_url` (JSON array, maks 20). Boleh di state apa pun selain draft (termasuk `paid`). Pemilik / admin / verifikator. Gak ikut ke docx.
 - `POST   /uploads`              — cuma jpg/png/webp/pdf, maks 10 MB → key `nota/nota_<id>.<ext>`. `GET /uploads/file?key=` cuma terima pola itu (anti traversal).

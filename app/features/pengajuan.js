@@ -4,19 +4,54 @@ import { rp, fmt, stateLabel, stateCls, toast } from '../lib/ui.js';
 const today = () => new Date().toISOString().slice(0, 10);
 
 // ── LIST ──────────────────────────────────────────────────────────────
+// Server-side: filter + pencarian + KEYSET pagination (nextCursor → "Muat lebih banyak").
+// summary (jumlah + total Rp sesuai filter) cuma datang di halaman pertama.
+const EMPTY_FILTER = () => ({ q: '', state: '', kategori: '', kodeProyek: '', from: '', to: '' });
+const DELETABLE = ['draft', 'rejected'];
+
 export const pengajuanList = () => ({
-  rows: [], loading: true, filter: { state: '', kategori: '', from: '', to: '' },
-  confirmRow: null,
-  rp, stateLabel, stateCls,
-  async init() { await this.load(); },
-  // filter tanggal (by pengajuan.tanggal, 'YYYY-MM-DD' → banding string aman) di sisi klien
-  get shown() {
-    return this.rows.filter((r) =>
-      (!this.filter.from || (r.tanggal || '') >= this.filter.from) &&
-      (!this.filter.to || (r.tanggal || '') <= this.filter.to));
+  rows: [], loading: true, loadingMore: false, nextCursor: null, summary: null,
+  filter: EMPTY_FILTER(), projects: [],
+  confirmRow: null, exporting: false,
+  rp, fmt, stateLabel, stateCls,
+  _seq: 0, // buang respons basi kalau user ngetik cepat
+  async init() {
+    api.get('/projects').then((p) => { this.projects = p || []; }).catch(() => {});
+    await this.load();
   },
-  // hapus: verif/approver/admin boleh semua; pengaju cuma miliknya
+  get hasFilter() { return Object.values(this.filter).some(Boolean); },
+  resetFilter() { this.filter = EMPTY_FILTER(); this.load(); },
+  query(extra = {}) {
+    const q = new URLSearchParams();
+    for (const [k, v] of Object.entries(this.filter)) if (v) q.set(k, String(v).trim());
+    for (const [k, v] of Object.entries(extra)) if (v) q.set(k, v);
+    return q.toString() ? '?' + q : '';
+  },
+  async load() {
+    const seq = ++this._seq;
+    this.loading = true;
+    try {
+      const r = await api.get('/pengajuan' + this.query());
+      if (seq !== this._seq) return;
+      this.rows = r.rows || []; this.nextCursor = r.nextCursor || null; this.summary = r.summary || null;
+    } catch (e) { if (seq === this._seq) toast(e.message, false); }
+    if (seq === this._seq) this.loading = false;
+    this.$nextTick(() => window.lucide?.createIcons());
+  },
+  async loadMore() {
+    if (!this.nextCursor || this.loadingMore) return;
+    const seq = this._seq;
+    this.loadingMore = true;
+    try {
+      const r = await api.get('/pengajuan' + this.query({ cursor: this.nextCursor }));
+      if (seq === this._seq) { this.rows = [...this.rows, ...(r.rows || [])]; this.nextCursor = r.nextCursor || null; }
+    } catch (e) { toast(e.message, false); }
+    this.loadingMore = false;
+    this.$nextTick(() => window.lucide?.createIcons());
+  },
+  // hapus cuma Draft/Ditolak (NBR yang sudah terbit gak boleh geser). Backend juga nolak.
   canDelete(r) {
+    if (!DELETABLE.includes(r.state)) return false;
     const s = this.$store.session;
     return s.has('admin') || s.has('approver') || s.has('verifikator') || r.pengajuId === s.user?.id;
   },
@@ -31,27 +66,12 @@ export const pengajuanList = () => ({
       await this.load();
     } catch (e) { toast(e.message, false); }
   },
-  async load() {
-    this.loading = true;
-    try {
-      const q = new URLSearchParams();
-      if (this.filter.state) q.set('state', this.filter.state);
-      if (this.filter.kategori) q.set('kategori', this.filter.kategori);
-      const r = await api.get('/pengajuan' + (q.toString() ? '?' + q : ''));
-      this.rows = Array.isArray(r) ? r : (r.rows || r.items || []);
-    } catch (e) { toast(e.message, false); }
-    this.loading = false;
-    this.$nextTick(() => window.lucide?.createIcons());
-  },
   open(id) { location.hash = '#/pengajuan/' + id; },
-  // export Excel: filter yang sama dengan tampilan (status, kategori, rentang tanggal) → server
-  exporting: false,
+  // export Excel: filter yang sama persis dengan tampilan (termasuk pencarian) → server
   async exportXlsx() {
     this.exporting = true;
     try {
-      const q = new URLSearchParams();
-      for (const k of ['state', 'kategori', 'from', 'to']) if (this.filter[k]) q.set(k, this.filter[k]);
-      await api.download('/pengajuan/export.xlsx' + (q.toString() ? '?' + q : ''), `rekap-pengajuan-${today()}.xlsx`);
+      await api.download('/pengajuan/export.xlsx' + this.query(), `rekap-pengajuan-${today()}.xlsx`);
       toast('Excel terunduh ✓');
     } catch (e) { toast(e.message, false); }
     this.exporting = false;

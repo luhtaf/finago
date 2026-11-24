@@ -191,46 +191,61 @@
         <button @click="exportXlsx()" :disabled="exporting" class="ml-auto px-4 py-2.5 rounded-fld border border-line dark:border-white/15 text-[13px] font-bold flex items-center gap-2 disabled:opacity-60" title="Export sesuai filter yang aktif"><i data-lucide="file-spreadsheet" class="w-4 h-4"></i> <span x-text="exporting ? 'Menyiapkan…' : 'Export Excel'"></span></button>
         <a href="#/buat" class="btn-primary px-4 py-2.5 rounded-fld text-[13px] font-bold flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Buat pengajuan</a>
       </div>
-      <div class="flex flex-wrap gap-2 mb-4">
-        <select x-model="filter.state" @change="load()" class="fld-sm max-w-[180px]">
+      <div class="flex flex-wrap gap-2 mb-3">
+        <div class="relative flex-1 min-w-[220px]">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+          <input type="search" x-model="filter.q" @input.debounce.400ms="load()" class="fld-sm w-full pl-9" placeholder="Cari NBR, nama, atau pengaju…" />
+        </div>
+        <select x-model="filter.state" @change="load()" class="fld-sm max-w-[170px]">
           <option value="">Semua status</option>
           <option value="draft">Draft</option><option value="submitted">Menunggu verif</option>
-          <option value="verified">Terverifikasi</option><option value="approved">Disetujui</option>
-          <option value="rejected">Ditolak</option><option value="paid">Cair</option>
+          <option value="needs_justification">Perlu alasan</option><option value="verified">Terverifikasi</option>
+          <option value="approved">Disetujui</option><option value="paid">Cair</option>
+          <option value="returned">Dikembalikan</option><option value="rejected">Ditolak</option>
         </select>
-        <select x-model="filter.kategori" @change="load()" class="fld-sm max-w-[180px]">
+        <select x-model="filter.kategori" @change="load()" class="fld-sm max-w-[170px]">
           <option value="">Semua kategori</option>
           <option value="reimbursement">Reimbursement</option><option value="pengajuan_baru">Pengajuan Baru</option>
         </select>
+        <select x-model="filter.kodeProyek" @change="load()" class="fld-sm max-w-[150px]">
+          <option value="">Semua proyek</option>
+          <template x-for="p in projects" :key="p.kode"><option :value="p.kode" x-text="p.kode"></option></template>
+        </select>
         <div class="flex items-center gap-1.5">
-          <input type="date" x-model="filter.from" class="fld-sm max-w-[150px]" title="Tanggal dari" />
+          <input type="date" x-model="filter.from" @change="load()" class="fld-sm max-w-[150px]" title="Tanggal dari" />
           <span class="text-slate-400 text-[12px]">–</span>
-          <input type="date" x-model="filter.to" class="fld-sm max-w-[150px]" title="Tanggal sampai" />
-          <button x-show="filter.from||filter.to" @click="filter.from='';filter.to=''" class="text-[12px] text-slate-400 hover:text-rose-500 font-semibold px-1">reset</button>
+          <input type="date" x-model="filter.to" @change="load()" class="fld-sm max-w-[150px]" title="Tanggal sampai" />
         </div>
+        <button x-show="hasFilter" @click="resetFilter()" class="text-[12px] text-slate-400 hover:text-rose-500 font-semibold px-1">reset filter</button>
       </div>
-      <div class="card overflow-hidden">
-        <table class="w-full text-[13px]">
+      <div class="text-[12px] text-slate-500 mb-2 h-4">
+        <template x-if="summary"><span>Menampilkan <b class="text-ink dark:text-white" x-text="rows.length"></b> dari <b class="text-ink dark:text-white" x-text="fmt(summary.count)"></b> pengajuan · Total <b class="text-ink dark:text-white" x-text="rp(summary.total)"></b></span></template>
+      </div>
+      <div class="card overflow-x-auto">
+        <table class="w-full text-[13px] min-w-[860px]">
           <thead class="text-[10px] uppercase tracking-wide text-slate-400 border-b border-line dark:border-white/10">
-            <tr><th class="text-left font-semibold px-4 py-3">NBR</th><th class="text-left font-semibold px-4 py-3">Tanggal</th><th class="text-left font-semibold px-4 py-3">Jenis Pengajuan</th><th class="text-left font-semibold px-4 py-3">Nama Pengaju</th><th class="text-left font-semibold px-4 py-3">Kode Unik</th><th class="text-right font-semibold px-4 py-3">Total</th><th class="text-left font-semibold px-4 py-3">Status</th><th class="px-2 py-3"></th></tr>
+            <tr><th class="text-left font-semibold px-4 py-3">NBR</th><th class="text-left font-semibold px-4 py-3">Tanggal</th><th class="text-left font-semibold px-4 py-3">Nama Pengajuan</th><th class="text-left font-semibold px-4 py-3">Pengaju</th><th class="text-left font-semibold px-4 py-3">Kode Unik</th><th class="text-right font-semibold px-4 py-3">Total</th><th class="text-left font-semibold px-4 py-3">Status</th><th class="px-2 py-3"></th></tr>
           </thead>
           <tbody>
             <template x-if="loading"><tr><td colspan="8" class="px-4 py-8 text-center text-slate-400">Memuat…</td></tr></template>
-            <template x-if="!loading && shown.length===0"><tr><td colspan="8" class="px-4 py-10 text-center text-slate-400">Belum ada pengajuan.</td></tr></template>
-            <template x-for="r in shown" :key="r.id">
+            <template x-if="!loading && rows.length===0"><tr><td colspan="8" class="px-4 py-10 text-center text-slate-400" x-text="hasFilter ? 'Gak ada pengajuan yang cocok dengan filter.' : 'Belum ada pengajuan.'"></td></tr></template>
+            <template x-for="r in rows" :key="r.id">
               <tr @click="open(r.id)" class="border-b border-line/60 dark:border-white/[.05] hover:bg-line/40 dark:hover:bg-white/5 cursor-pointer">
                 <td class="px-4 py-3 font-mono text-[12px] font-semibold text-brand-500 dark:text-accent-400" x-text="r.nbr"></td>
-                <td class="px-4 py-3 text-slate-500 num text-[12px]" x-text="r.tanggal"></td>
-                <td class="px-4 py-3 text-slate-600 dark:text-slate-300" x-text="r.kategori==='reimbursement'?'Reimbursement':'Pengajuan Baru'"></td>
-                <td class="px-4 py-3 font-semibold text-ink dark:text-white" x-text="r.pengaju||'—'"></td>
+                <td class="px-4 py-3 text-slate-500 num text-[12px] whitespace-nowrap" x-text="r.tanggal"></td>
+                <td class="px-4 py-3 max-w-[280px]"><div class="font-semibold text-ink dark:text-white truncate" x-text="r.nama" :title="r.nama"></div><div class="text-[11px] text-slate-400" x-text="r.kategori==='reimbursement'?'Reimbursement':'Pengajuan Baru'"></div></td>
+                <td class="px-4 py-3 text-slate-600 dark:text-slate-300 whitespace-nowrap" x-text="r.pengaju||'—'"></td>
                 <td class="px-4 py-3 text-slate-500" x-text="r.kodeProyek"></td>
-                <td class="px-4 py-3 text-right num font-semibold" x-text="rp(r.total)"></td>
-                <td class="px-4 py-3"><span class="px-2 py-1 rounded-chip text-[11px] font-semibold" :class="stateCls(r.state)" x-text="stateLabel(r.state)"></span></td>
-                <td class="px-2 py-3 text-right"><button x-show="canDelete(r)" @click.stop="askDelete(r)" class="p-1.5 rounded-md text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10" title="Hapus pengajuan"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
+                <td class="px-4 py-3 text-right num font-semibold whitespace-nowrap" x-text="rp(r.total)"></td>
+                <td class="px-4 py-3"><span class="px-2 py-1 rounded-chip text-[11px] font-semibold whitespace-nowrap" :class="stateCls(r.state)" x-text="stateLabel(r.state)"></span></td>
+                <td class="px-2 py-3 text-right"><button x-show="canDelete(r)" @click.stop="askDelete(r)" class="p-1.5 rounded-md text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10" title="Hapus pengajuan (Draft/Ditolak)"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
               </tr>
             </template>
           </tbody>
         </table>
+      </div>
+      <div class="flex justify-center mt-4" x-show="nextCursor">
+        <button @click="loadMore()" :disabled="loadingMore" class="px-5 py-2.5 rounded-fld border border-line dark:border-white/15 text-[13px] font-bold disabled:opacity-60" x-text="loadingMore ? 'Memuat…' : 'Muat lebih banyak'"></button>
       </div>
 
       <!-- konfirmasi hapus -->

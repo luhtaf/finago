@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real, index } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
 // ── master kode unik / proyek (REKAP COP) ─────────────────────────────
@@ -63,7 +63,14 @@ export const pengajuan = sqliteTable('pengajuan', {
     enum: ['draft', 'submitted', 'needs_justification', 'verified', 'approved', 'returned', 'rejected', 'paid'],
   }).notNull().default('draft'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
-});
+}, (t) => ({
+  // List pakai keyset pagination ORDER BY (tanggal, created_at, id) DESC → index ini.
+  // Filter umum (status / pengaju / proyek) + urutan tanggal → index komposit masing-masing.
+  tanggalIdx: index('pengajuan_tanggal_idx').on(t.tanggal, t.createdAt, t.id),
+  stateIdx: index('pengajuan_state_tanggal_idx').on(t.state, t.tanggal),
+  pengajuIdx: index('pengajuan_pengaju_tanggal_idx').on(t.pengajuId, t.tanggal),
+  proyekIdx: index('pengajuan_proyek_tanggal_idx').on(t.kodeProyek, t.tanggal),
+}));
 
 // ── pengajuan item (Detail Item) ──────────────────────────────────────
 export const pengajuanItem = sqliteTable('pengajuan_item', {
@@ -77,7 +84,9 @@ export const pengajuanItem = sqliteTable('pengajuan_item', {
   remark: text('remark'),
   // flag "item ini dipantau" — di-toggle manual oleh verifikator. Simpel: on/off, no interval.
   monitored: integer('monitored', { mode: 'boolean' }).notNull().default(false),
-});
+}, (t) => ({
+  pengajuanIdx: index('pengajuan_item_pengajuan_idx').on(t.pengajuanId),
+}));
 
 // ── monitored items (anomaly detection) ───────────────────────────────
 export const monitoredItems = sqliteTable('monitored_items', {
